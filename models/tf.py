@@ -241,7 +241,7 @@ class tf_Detect(keras.layers.Layer):
                 y = tf.concat([xy, wh, y[..., 4:]], -1)
                 z.append(tf.reshape(y, [-1, 3 * ny * nx, self.no]))
 
-        return x if self.training else (tf.concat(z, 1), x)
+        return x if self.training else tf.concat(z, 1)
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
@@ -357,56 +357,67 @@ class tf_Model():
 
         # Add TensorFlow NMS
         if opt.tf_nms:
-            boxes = xywh2xyxy(x[0][..., :4])
-            probs = x[0][:, :, 4:5]
-            classes = x[0][:, :, 5:]
+            boxes = xywh2xyxy(x[..., :4])
+            probs = x[:, :, 4:5]
+            classes = x[:, :, 5:]
             scores = probs * classes
             if opt.agnostic_nms:
                 nms = agnostic_nms_layer()((boxes, classes, scores))
-                return nms, x[1]
+                return nms
             else:
                 boxes = tf.expand_dims(boxes, 2)
                 nms = tf.image.combined_non_max_suppression(
                     boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.score_thres, clip_boxes=False)
-                return nms, x[1]
+                return nms
 
-        return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
-        # x = x[0][0]  # [x(1,6300,85), ...] to x(6300,85)
-        # xywh = x[..., :4]  # x(6300,4) boxes
-        # conf = x[..., 4:5]  # x(6300,1) confidences
-        # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32), (-1, 1))  # x(6300,1)  classes
-        # return tf.concat([conf, cls, xywh], 1)
+        return x
 
 
 class agnostic_nms_layer(keras.layers.Layer):
     # wrap map_fn to avoid TypeSpec related error https://stackoverflow.com/a/65809989/3036450
     def call(self, input):
+        # return tf.map_fn(agnostic_nms, input,
+        #                  fn_output_signature=(tf.float32, tf.float32, tf.float32, tf.int32),
+        #                  name='agnostic_nms')
         return tf.map_fn(agnostic_nms, input,
-                         fn_output_signature=(tf.float32, tf.float32, tf.float32, tf.int32),
+                         fn_output_signature=(
+                             tf.TensorSpec((opt.topk_all, 4), dtype=tf.float32),
+                             tf.TensorSpec((opt.topk_all), dtype=tf.float32),
+                             tf.TensorSpec((opt.topk_all), dtype=tf.float32),
+                             tf.TensorSpec((), dtype=tf.int32)),
                          name='agnostic_nms')
 
 
 def agnostic_nms(x):
+    # boxes, classes, scores = x
+    # class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
+    # scores_inp = tf.reduce_max(scores, -1)
+    # selected_inds = tf.image.non_max_suppression(
+    #     boxes, scores_inp, max_output_size=opt.topk_all, iou_threshold=opt.iou_thres, score_threshold=opt.score_thres)
+    # selected_boxes = tf.gather(boxes, selected_inds)
+    # padded_boxes = tf.pad(selected_boxes,
+    #                       paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
+    #                       mode="CONSTANT", constant_values=0.0)
+    # selected_scores = tf.gather(scores_inp, selected_inds)
+    # padded_scores = tf.pad(selected_scores,
+    #                        paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
+    #                        mode="CONSTANT", constant_values=-1.0)
+    # selected_classes = tf.gather(class_inds, selected_inds)
+    # padded_classes = tf.pad(selected_classes,
+    #                         paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
+    #                         mode="CONSTANT", constant_values=-1.0)
+    # valid_detections = tf.shape(selected_inds)[0]
+    # return padded_boxes, padded_scores, padded_classes, valid_detections
     boxes, classes, scores = x
     class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
     scores_inp = tf.reduce_max(scores, -1)
-    selected_inds = tf.image.non_max_suppression(
-        boxes, scores_inp, max_output_size=opt.topk_all, iou_threshold=opt.iou_thres, score_threshold=opt.score_thres)
+    selected_inds, valid_detections = tf.image.non_max_suppression_padded(
+        boxes, scores_inp, max_output_size=opt.topk_all, iou_threshold=opt.iou_thres,
+        score_threshold=opt.score_thres, pad_to_max_output_size=True)
     selected_boxes = tf.gather(boxes, selected_inds)
-    padded_boxes = tf.pad(selected_boxes,
-                          paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
-                          mode="CONSTANT", constant_values=0.0)
     selected_scores = tf.gather(scores_inp, selected_inds)
-    padded_scores = tf.pad(selected_scores,
-                           paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
-                           mode="CONSTANT", constant_values=-1.0)
     selected_classes = tf.gather(class_inds, selected_inds)
-    padded_classes = tf.pad(selected_classes,
-                            paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
-                            mode="CONSTANT", constant_values=-1.0)
-    valid_detections = tf.shape(selected_inds)[0]
-    return padded_boxes, padded_scores, padded_classes, valid_detections
-
+    return selected_boxes, selected_scores, selected_classes, valid_detections
 
 def xywh2xyxy(xywh):
     # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
@@ -444,8 +455,8 @@ if __name__ == "__main__":
                         help='use tf.raw_ops.ResizeNearestNeighbor for resize')
     parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
     parser.add_argument('--topk-all', type=int, default=100, help='topk for all classes to keep in NMS')
-    parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
-    parser.add_argument('--score-thres', type=float, default=0.4, help='score threshold for NMS')
+    parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
+    parser.add_argument('--score-thres', type=float, default=0.25, help='score threshold for NMS')
     opt = parser.parse_args()
     opt.cfg = check_file(opt.cfg)  # check file
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
@@ -504,55 +515,54 @@ if __name__ == "__main__":
         traceback.print_exc(file=sys.stdout)
 
     # TFLite model export
-    if not opt.tf_nms:
-        try:
-            print('\nStarting TFLite export with TensorFlow %s...' % tf.__version__)
+    try:
+        print('\nStarting TFLite export with TensorFlow %s...' % tf.__version__)
 
-            # fp32 TFLite model export ---------------------------------------------------------------------------------
-            # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-            # converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
-            # converter.allow_custom_ops = False
-            # converter.experimental_new_converter = True
-            # tflite_model = converter.convert()
-            # f = opt.weights.replace('.pt', '.tflite')  # filename
-            # open(f, "wb").write(tflite_model)
+        # fp32 TFLite model export ---------------------------------------------------------------------------------
+        # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
+        # converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
+        # converter.allow_custom_ops = False
+        # converter.experimental_new_converter = True
+        # tflite_model = converter.convert()
+        # f = opt.weights.replace('.pt', '.tflite')  # filename
+        # open(f, "wb").write(tflite_model)
 
-            # fp16 TFLite model export ---------------------------------------------------------------------------------
+        # fp16 TFLite model export ---------------------------------------------------------------------------------
+        converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        # converter.representative_dataset = representative_dataset_gen
+        # converter.target_spec.supported_types = [tf.float16]
+        converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
+        converter.allow_custom_ops = False
+        converter.experimental_new_converter = True
+        tflite_model = converter.convert()
+        f = opt.weights.replace('.pt', '-fp16.tflite')  # filename
+        open(f, "wb").write(tflite_model)
+        print('\nTFLite export success, saved as %s' % f)
+
+        # int8 TFLite model export ---------------------------------------------------------------------------------
+        if opt.tfl_int8:
+            # Representative Dataset
+            if opt.source.endswith('.yaml'):
+                with open(check_file(opt.source)) as f:
+                    data = yaml.load(f, Loader=yaml.FullLoader)  # data dict
+                    check_dataset(data)  # check
+                opt.source = data['train']
+            dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
             converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
             converter.optimizations = [tf.lite.Optimize.DEFAULT]
-            # converter.representative_dataset = representative_dataset_gen
-            # converter.target_spec.supported_types = [tf.float16]
-            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
+            converter.representative_dataset = representative_dataset_gen
+            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+            converter.inference_input_type = tf.uint8  # or tf.int8
+            converter.inference_output_type = tf.uint8  # or tf.int8
             converter.allow_custom_ops = False
             converter.experimental_new_converter = True
+            converter.experimental_new_quantizer = False
             tflite_model = converter.convert()
-            f = opt.weights.replace('.pt', '-fp16.tflite')  # filename
+            f = opt.weights.replace('.pt', '-int8.tflite')  # filename
             open(f, "wb").write(tflite_model)
-            print('\nTFLite export success, saved as %s' % f)
+            print('\nTFLite (int8) export success, saved as %s' % f)
 
-            # int8 TFLite model export ---------------------------------------------------------------------------------
-            if opt.tfl_int8:
-                # Representative Dataset
-                if opt.source.endswith('.yaml'):
-                    with open(check_file(opt.source)) as f:
-                        data = yaml.load(f, Loader=yaml.FullLoader)  # data dict
-                        check_dataset(data)  # check
-                    opt.source = data['train']
-                dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
-                converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-                converter.optimizations = [tf.lite.Optimize.DEFAULT]
-                converter.representative_dataset = representative_dataset_gen
-                converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-                converter.inference_input_type = tf.uint8  # or tf.int8
-                converter.inference_output_type = tf.uint8  # or tf.int8
-                converter.allow_custom_ops = False
-                converter.experimental_new_converter = True
-                converter.experimental_new_quantizer = False
-                tflite_model = converter.convert()
-                f = opt.weights.replace('.pt', '-int8.tflite')  # filename
-                open(f, "wb").write(tflite_model)
-                print('\nTFLite (int8) export success, saved as %s' % f)
-
-        except Exception as e:
-            print('\nTFLite export failure: %s' % e)
-            traceback.print_exc(file=sys.stdout)
+    except Exception as e:
+        print('\nTFLite export failure: %s' % e)
+        traceback.print_exc(file=sys.stdout)
