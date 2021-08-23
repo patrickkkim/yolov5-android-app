@@ -240,7 +240,9 @@ def detect(opt):
                 input_data = input_data.astype(np.uint8)
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
-            if not opt.tfl_detect:
+            if opt.no_tf_nms:
+                pred = [torch.tensor(interpreter.get_tensor(output_details[i]['index']), device=device) for i in range(4)]
+            elif not opt.tfl_detect:
                 output_data = interpreter.get_tensor(output_details[0]['index'])
                 pred = torch.tensor(output_data)
             else:
@@ -285,12 +287,13 @@ def detect(opt):
         if not opt.no_tf_nms:
             pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
         else:
-            nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections = pred
+            # nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections = pred
+            valid_detections, nmsed_classes, nmsed_scores, nmsed_boxes = pred
             if not tf.__version__.startswith('1'):
-                nmsed_boxes = torch.tensor(nmsed_boxes.numpy())
-                nmsed_scores = torch.tensor(nmsed_scores.numpy())
-                nmsed_classes = torch.tensor(nmsed_classes.numpy())
-                valid_detections = torch.tensor(valid_detections.numpy())
+                nmsed_boxes = torch.tensor(nmsed_boxes.cpu().numpy())
+                nmsed_scores = torch.tensor(nmsed_scores.cpu().numpy())
+                nmsed_classes = torch.tensor(nmsed_classes.cpu().numpy())
+                valid_detections = torch.tensor(valid_detections.cpu().numpy())
                 # Denormalize xywh
                 if opt.nms_denorm:
                     nmsed_boxes[..., 0] *= imgsz[1]  # x
