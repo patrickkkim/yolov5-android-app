@@ -1,174 +1,330 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
-"""
-Run inference on images, videos, directories, streams, etc.
-
-Usage:
-    $ python path/to/detect.py --source path/to/img.jpg --weights yolov5s.pt --img 640
-"""
-
 import argparse
-import sys
 import time
 from pathlib import Path
+import platform
 
 import cv2
-import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
-
-FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
+import yaml
+from numpy import random
+import numpy as np
 
 from models.experimental import attempt_load
+from models.yolo import Detect
 from utils.datasets import LoadStreams, LoadImages
-from utils.general import check_img_size, check_requirements, check_imshow, colorstr, non_max_suppression, \
-    apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
+from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
+    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
 from utils.plots import colors, plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_sync
 
+EDGETPU_SHARED_LIB = {
+  'Linux': 'libedgetpu.so.1',
+  'Darwin': 'libedgetpu.1.dylib',
+  'Windows': 'edgetpu.dll'
+}[platform.system()]
+
 
 @torch.no_grad()
-def run(weights='yolov5s.pt',  # model.pt path(s)
-        source='data/images',  # file/dir/URL/glob, 0 for webcam
-        imgsz=640,  # inference size (pixels)
-        conf_thres=0.25,  # confidence threshold
-        iou_thres=0.45,  # NMS IOU threshold
-        max_det=1000,  # maximum detections per image
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        view_img=False,  # show results
-        save_txt=False,  # save results to *.txt
-        save_conf=False,  # save confidences in --save-txt labels
-        save_crop=False,  # save cropped prediction boxes
-        nosave=False,  # do not save images/videos
-        classes=None,  # filter by class: --class 0, or --class 0 2 3
-        agnostic_nms=False,  # class-agnostic NMS
-        augment=False,  # augmented inference
-        visualize=False,  # visualize features
-        update=False,  # update all models
-        project='runs/detect',  # save results to project/name
-        name='exp',  # save results to project/name
-        exist_ok=False,  # existing project/name ok, do not increment
-        line_thickness=3,  # bounding box thickness (pixels)
-        hide_labels=False,  # hide labels
-        hide_conf=False,  # hide confidences
-        half=False,  # use FP16 half-precision inference
-        tfl_int8=False,  # INT8 quantized TFLite model
-        ):
-    save_img = not nosave and not source.endswith('.txt')  # save inference images
+def detect(opt):
+    source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+    save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
 
     # Directories
-    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
+    save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+
+    if len(imgsz) == 1:
+        imgsz = imgsz[0]
 
     # Initialize
     set_logging()
-    device = select_device(device)
-    half &= device.type != 'cpu'  # half precision only supported on CUDA
+    device = select_device(opt.device)
+    half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
-    w = weights[0] if isinstance(weights, list) else weights
-    classify, suffix = False, Path(w).suffix.lower()
-    pt, onnx, tflite, pb, saved_model = (suffix == x for x in ['.pt', '.onnx', '.tflite', '.pb', ''])  # backend
-    stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
-    if pt:
+    with open('data/coco.yaml') as f:
+        names = yaml.load(f, Loader=yaml.FullLoader)['names']  # class names (assume COCO)
+
+    if weights[0].split('.')[-1] == 'pt':
+        backend = 'pytorch'
         model = attempt_load(weights, map_location=device)  # load FP32 model
         stride = int(model.stride.max())  # model stride
-        names = model.module.names if hasattr(model, 'module') else model.names  # get class names
-        if half:
-            model.half()  # to FP16
-        if classify:  # second-stage classifier
-            modelc = load_classifier(name='resnet50', n=2)  # initialize
-            modelc.load_state_dict(torch.load('resnet50.pt', map_location=device)['model']).to(device).eval()
-    elif onnx:
-        check_requirements(('onnx', 'onnxruntime'))
-        import onnxruntime
-        session = onnxruntime.InferenceSession(w, None)
-    else:  # TensorFlow models
-        check_requirements(('tensorflow>=2.4.1',))
-        import tensorflow as tf
-        if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
-            def wrap_frozen_graph(gd, inputs, outputs):
-                x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped import
-                return x.prune(tf.nest.map_structure(x.graph.as_graph_element, inputs),
-                               tf.nest.map_structure(x.graph.as_graph_element, outputs))
+        imgsz = check_img_size(imgsz, s=stride)  # check img_size
+        names = model.module.names if hasattr(model, 'module') else model.names  # class names
+    elif weights[0].split('.')[-1] == 'pb':
+        backend = 'graph_def'
+    elif weights[0].split('.')[-1] == 'tflite':
+        backend = 'tflite'
+    else:
+        backend = 'saved_model'
 
-            graph_def = tf.Graph().as_graph_def()
-            graph_def.ParseFromString(open(w, 'rb').read())
-            frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
-        elif saved_model:
-            model = tf.keras.models.load_model(w)
-        elif tflite:
-            interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
-            interpreter.allocate_tensors()  # allocate
-            input_details = interpreter.get_input_details()  # inputs
-            output_details = interpreter.get_output_details()  # outputs
-    imgsz = check_img_size(imgsz, s=stride)  # check image size
+    if backend == 'saved_model' or backend =='graph_def' or backend=='tflite':
+       import tensorflow as tf
+       from tensorflow import keras
+       stride = None
 
-    # Dataloader
+    if backend == 'pytorch':
+        model = attempt_load(weights, map_location=device)  # load FP32 model
+    elif backend == 'saved_model':
+        if tf.__version__.startswith('1'):
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth=True
+            sess = tf.Session(config=config)
+            loaded = tf.saved_model.load(sess, [tf.saved_model.tag_constants.SERVING], weights[0])
+            tf_input = loaded.signature_def['serving_default'].inputs['input_1']
+            if not opt.no_tf_nms:
+                tf_output = loaded.signature_def['serving_default'].outputs['tf__detect']
+            else:
+                tf_outputs = [loaded.signature_def['serving_default'].outputs['tf_op_layer_CombinedNonMaxSuppression'],
+                              loaded.signature_def['serving_default'].outputs['tf_op_layer_CombinedNonMaxSuppression_1'],
+                              loaded.signature_def['serving_default'].outputs['tf_op_layer_CombinedNonMaxSuppression_2'],
+                              loaded.signature_def['serving_default'].outputs['tf_op_layer_CombinedNonMaxSuppression_3']
+                ]
+        else:
+            model = keras.models.load_model(weights[0])
+    elif backend == 'graph_def':
+        if tf.__version__.startswith('1'):
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth=True
+            sess = tf.Session(config=config)
+            graph = tf.Graph()
+            graph_def = graph.as_graph_def()
+            graph_def.ParseFromString(open(weights[0], 'rb').read())
+            tf.import_graph_def(graph_def, name='')
+            default_graph = tf.get_default_graph()
+            tf_input = default_graph.get_tensor_by_name('x:0')
+            if not opt.no_tf_nms:
+                tf_output = default_graph.get_tensor_by_name('Identity:0')
+            else:
+                tf_outputs = [default_graph.get_tensor_by_name('Identity:0'),
+                              default_graph.get_tensor_by_name('Identity_1:0'),
+                              default_graph.get_tensor_by_name('Identity_2:0'),
+                              default_graph.get_tensor_by_name('Identity_3:0')
+                ]
+
+        else:
+            # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
+            # https://github.com/leimao/Frozen_Graph_TensorFlow
+            def wrap_frozen_graph(graph_def, inputs, outputs, print_graph=False):
+                def _imports_graph_def():
+                    tf.compat.v1.import_graph_def(graph_def, name="")
+
+                wrapped_import = tf.compat.v1.wrap_function(_imports_graph_def, [])
+                import_graph = wrapped_import.graph
+
+                if print_graph == True:
+                    print("-" * 50)
+                    print("Frozen model layers: ")
+                    layers = [op.name for op in import_graph.get_operations()]
+                    for layer in layers:
+                        print(layer)
+                    print("-" * 50)
+
+                return wrapped_import.prune(
+                    tf.nest.map_structure(import_graph.as_graph_element, inputs),
+                    tf.nest.map_structure(import_graph.as_graph_element, outputs))
+
+            graph = tf.Graph()
+            graph_def = graph.as_graph_def()
+            graph_def.ParseFromString(open(weights[0], 'rb').read())
+            frozen_func = wrap_frozen_graph(graph_def=graph_def,
+                                            inputs="x:0",
+                                            outputs="Identity:0" if not opt.no_tf_nms else
+                                                ["Identity:0", "Identity_1:0", "Identity_2:0", "Identity_3:0"],
+                                            print_graph=False)
+
+    elif backend == 'tflite':
+        # Load TFLite model and allocate tensors.
+        interpreter = tf.lite.Interpreter(
+            model_path=opt.weights[0],
+            experimental_delegates=
+                [tf.lite.experimental.load_delegate(EDGETPU_SHARED_LIB)] if opt.edgetpu else None)
+        interpreter.allocate_tensors()
+
+        # Get input and output tensors.
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+
+    if backend == 'pytorch':
+        imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
+
+    if half and backend == 'pytorch':
+        model.half()  # to FP16
+
+    # Second-stage classifier
+    classify = False
+    if classify:
+        modelc = load_classifier(name='resnet101', n=2)  # initialize
+        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
+
+    # Set Dataloader
+    vid_path, vid_writer = None, None
     if webcam:
         view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt)
-        bs = len(dataset)  # batch_size
+        dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=backend == 'pytorch')
     else:
-        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
-        bs = 1  # batch_size
-    vid_path, vid_writer = [None] * bs, [None] * bs
+        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=backend == 'pytorch')
 
     # Run inference
-    if pt and device.type != 'cpu':
-        model(torch.zeros(1, 3, *imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
-    for path, img, im0s, vid_cap in dataset:
-        if onnx:
-            img = img.astype('float32')
+    if isinstance(imgsz, int):
+        imgsz = (imgsz, imgsz)
+    img = torch.zeros((1, 3, *imgsz), device=device)  # init img
+    if (backend == 'saved_model' or backend == 'graph_def') and tf.__version__.startswith('1'):
+        fetches = tf_output.name if not opt.no_tf_nms else [o.name for o in tf_outputs]
+
+    if backend == 'pytorch':
+        _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+    elif backend == 'saved_model':
+        if tf.__version__.startswith('1'):
+            _ = sess.run(fetches, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
         else:
-            img = torch.from_numpy(img).to(device)
-            img = img.half() if half else img.float()  # uint8 to fp16/32
-        img = img / 255.0  # 0 - 255 to 0.0 - 1.0
-        if len(img.shape) == 3:
-            img = img[None]  # expand for batch dim
+            _ = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False)
+    elif backend == 'graph_def':
+        if tf.__version__.startswith('1'):
+            _ = sess.run(fetches, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+        else:
+            _ = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy()))
+    elif backend == 'tflite':
+        input_data = img.permute(0, 2, 3, 1).cpu().numpy()
+        if opt.tfl_int8:
+            input_data = input_data.astype(np.uint8)
+        interpreter.set_tensor(input_details[0]['index'], input_data)
+        interpreter.invoke()
+        output_data = interpreter.get_tensor(output_details[0]['index'])
+
+    for path, img, im0s, vid_cap in dataset:
+        img = torch.from_numpy(img).to(device)
+        img = img.half() if half and backend == 'pytorch' else img.float()  # uint8 to fp16/32
+        img /= 255.0  # 0 - 255 to 0.0 - 1.0
+        if img.ndimension() == 3:
+            img = img.unsqueeze(0)
 
         # Inference
         t1 = time_sync()
-        if pt:
-            visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
-            pred = model(img, augment=augment, visualize=visualize)[0]
-        elif onnx:
-            pred = torch.tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
-        else:  # tensorflow model (tflite, pb, saved_model)
-            imn = img.permute(0, 2, 3, 1).cpu().numpy()  # image in numpy
-            if pb:
-                pred = frozen_func(x=tf.constant(imn)).numpy()
-            elif saved_model:
-                pred = model(imn, training=False).numpy()
-            elif tflite:
-                if tfl_int8:
-                    scale, zero_point = input_details[0]['quantization']
-                    imn = (imn / scale + zero_point).astype(np.uint8)
-                interpreter.set_tensor(input_details[0]['index'], imn)
-                interpreter.invoke()
-                pred = interpreter.get_tensor(output_details[0]['index'])
-                if tfl_int8:
-                    scale, zero_point = output_details[0]['quantization']
-                    pred = (pred.astype(np.float32) - zero_point) * scale
-            pred[..., 0] *= imgsz[1]  # x
-            pred[..., 1] *= imgsz[0]  # y
-            pred[..., 2] *= imgsz[1]  # w
-            pred[..., 3] *= imgsz[0]  # h
-            pred = torch.tensor(pred)
+        if backend == 'pytorch':
+            pred = model(img, augment=opt.augment)[0]
 
-        # NMS
-        pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
+        elif backend == 'saved_model':
+            if tf.__version__.startswith('1'):
+                pred = sess.run(fetches, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+                if not opt.no_tf_nms:
+                    pred = torch.tensor(pred)
+            else:
+                res = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False)
+                if not opt.no_tf_nms:
+                    pred = res[0].numpy()
+                    pred = torch.tensor(pred)
+                else:
+                    pred = res[0]
+
+        elif backend == 'graph_def':
+            if tf.__version__.startswith('1'):
+                pred = sess.run(fetches, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+                if not opt.no_tf_nms:
+                    pred = torch.tensor(pred)
+            else:
+                pred = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy()))
+                if not opt.no_tf_nms:
+                    pred = torch.tensor(pred.numpy())
+
+        elif backend == 'tflite':
+            input_data = img.permute(0, 2, 3, 1).cpu().numpy()
+            if opt.tfl_int8:
+                scale, zero_point = input_details[0]['quantization']
+                input_data = input_data / scale + zero_point
+                input_data = input_data.astype(np.uint8)
+            interpreter.set_tensor(input_details[0]['index'], input_data)
+            interpreter.invoke()
+            if opt.no_tf_nms:
+                pred = [torch.tensor(interpreter.get_tensor(output_details[i]['index']), device=device) for i in range(4)]
+            elif not opt.tfl_detect:
+                output_data = interpreter.get_tensor(output_details[0]['index'])
+                pred = torch.tensor(output_data)
+            else:
+                yaml_file = Path(opt.cfg).name
+                with open(opt.cfg) as f:
+                    cfg = yaml.load(f, Loader=yaml.FullLoader)
+
+                anchors = cfg['anchors']
+                nc = cfg['nc']
+                nl = len(anchors)
+                x = [torch.tensor(interpreter.get_tensor(output_details[i]['index']), device=device) for i in range(nl)]
+                if opt.tfl_int8:
+                    for i in range(nl):
+                        scale, zero_point = output_details[i]['quantization']
+                        x[i] = x[i].float()
+                        x[i] = (x[i] - zero_point) * scale
+
+                def _make_grid(nx=20, ny=20):
+                    yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
+                    return torch.stack((xv, yv), 2).view((1, 1, ny * nx, 2)).float()
+
+                no = nc + 5
+                grid = [torch.zeros(1)] * nl  # init grid
+                a = torch.tensor(anchors).float().view(nl, -1, 2).to(device)
+                anchor_grid = a.clone().view(nl, 1, -1, 1, 2)  # shape(nl,1,na,1,2)
+                z = []  # inference output
+                for i in range(nl):
+                    _, _, ny_nx, _ = x[i].shape
+                    r = imgsz[0] / imgsz[1]
+                    nx = int(np.sqrt(ny_nx / r))
+                    ny = int(r * nx)
+                    grid[i] = _make_grid(nx, ny).to(x[i].device)
+                    stride = imgsz[0] // ny
+                    y = x[i].sigmoid()
+                    y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + grid[i].to(x[i].device)) * stride  # xy
+                    y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * anchor_grid[i]  # wh
+                    z.append(y.view(-1, no))
+
+                pred = torch.unsqueeze(torch.cat(z, 0), 0)
+
+        # Apply NMS
+        if not opt.no_tf_nms:
+            pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
+        else:
+            nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections = pred
+            if not tf.__version__.startswith('1'):
+                nmsed_boxes = torch.tensor(nmsed_boxes.cpu().numpy())
+                nmsed_scores = torch.tensor(nmsed_scores.cpu().numpy())
+                nmsed_classes = torch.tensor(nmsed_classes.cpu().numpy())
+                valid_detections = torch.tensor(valid_detections.cpu().numpy())
+                # Denormalize xywh
+                if opt.nms_denorm:
+                    nmsed_boxes[..., 0] *= imgsz[1]  # x
+                    nmsed_boxes[..., 1] *= imgsz[0]  # y
+                    nmsed_boxes[..., 2] *= imgsz[1]  # w
+                    nmsed_boxes[..., 3] *= imgsz[0]  # h
+            else:
+                nmsed_boxes = torch.tensor(nmsed_boxes)
+                nmsed_scores = torch.tensor(nmsed_scores)
+                nmsed_classes = torch.tensor(nmsed_classes)
+                valid_detections = torch.tensor(valid_detections)
+                # Denormalize xywh
+                if opt.nms_denorm:
+                    nmsed_boxes[..., 0] *= imgsz[1]  # x
+                    nmsed_boxes[..., 1] *= imgsz[0]  # y
+                    nmsed_boxes[..., 2] *= imgsz[1]  # w
+                    nmsed_boxes[..., 3] *= imgsz[0]  # h
+
+            bs = nmsed_boxes.shape[0]
+            pred = [None] * bs
+            for i in range(bs):
+                pred[i] = torch.cat([nmsed_boxes[i, :valid_detections[i], :],
+                                     torch.unsqueeze(nmsed_scores[i, :valid_detections[i]], -1),
+                                     torch.unsqueeze(nmsed_classes[i, :valid_detections[i]], -1)], -1)
+
         t2 = time_sync()
 
-        # Second-stage classifier (optional)
+        # Apply Classifier
         if classify:
             pred = apply_classifier(pred, modelc, img, im0s)
 
-        # Process predictions
+        # Process detections
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
                 p, s, im0, frame = path[i], f'{i}: ', im0s[i].copy(), dataset.count
@@ -180,7 +336,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-            imc = im0.copy() if save_crop else im0  # for save_crop
+            imc = im0.copy() if opt.save_crop else im0  # for opt.save_crop
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
@@ -194,15 +350,15 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
+                        line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-                    if save_img or save_crop or view_img:  # Add bbox to image
+                    if save_img or opt.save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
-                        label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                        im0 = plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=line_thickness)
-                        if save_crop:
+                        label = None if opt.hide_labels else (names[c] if opt.hide_conf else f'{names[c]} {conf:.2f}')
+                        plot_one_box(xyxy, im0, label=label, color=colors(c, True))
+                        if opt.save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
             # Print time (inference + NMS)
@@ -218,10 +374,10 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                 if dataset.mode == 'image':
                     cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
-                    if vid_path[i] != save_path:  # new video
-                        vid_path[i] = save_path
-                        if isinstance(vid_writer[i], cv2.VideoWriter):
-                            vid_writer[i].release()  # release previous video writer
+                    if vid_path != save_path:  # new video
+                        vid_path = save_path
+                        if isinstance(vid_writer, cv2.VideoWriter):
+                            vid_writer.release()  # release previous video writer
                         if vid_cap:  # video
                             fps = vid_cap.get(cv2.CAP_PROP_FPS)
                             w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -229,29 +385,26 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                         else:  # stream
                             fps, w, h = 30, im0.shape[1], im0.shape[0]
                             save_path += '.mp4'
-                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                    vid_writer[i].write(im0)
+                        vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                    vid_writer.write(im0)
 
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        print(f"Results saved to {colorstr('bold', save_dir)}{s}")
-
-    if update:
-        strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
+        print(f"Results saved to {save_dir}{s}")
 
     print(f'Done. ({time.time() - t0:.3f}s)')
 
 
-def parse_opt():
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
-    parser.add_argument('--source', type=str, default='data/images', help='file/dir/URL/glob, 0 for webcam')
-    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
-    parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
+    parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--img-size', nargs='+', type=int, default=[320, 320], help='image size')  # height, width
+    parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
+    parser.add_argument('--max-det', type=int, default=1000, help='maximum number of detections per image')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='show results')
+    parser.add_argument('--view-img', action='store_true', help='display results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
@@ -259,27 +412,27 @@ def parse_opt():
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
-    parser.add_argument('--visualize', action='store_true', help='visualize features')
     parser.add_argument('--update', action='store_true', help='update all models')
     parser.add_argument('--project', default='runs/detect', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--tfl-detect', action='store_true', help='add Detect module in TFLite')
+    parser.add_argument('--cfg', type=str, default='./models/yolov5s.yaml', help='cfg path')
+    parser.add_argument('--tfl-int8', action='store_true', help='use int8 quantized TFLite model')
+    parser.add_argument('--no-tf-nms', action='store_true', help='dont proceed NMS due to model w/ TensorFlow NMS')
+    parser.add_argument('--edgetpu', action='store_true', help='inference with Edge TPU')
+    parser.add_argument('--nms-denorm', action='store_true', help='denormalize xywh after NMS')
     parser.add_argument('--line-thickness', default=3, type=int, help='bounding box thickness (pixels)')
     parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
-    parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
-    parser.add_argument('--tfl-int8', action='store_true', help='INT8 quantized TFLite model')
     opt = parser.parse_args()
-    opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
-    return opt
+    opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
+    print(opt)
+    check_requirements(exclude=('tensorboard', 'pycocotools', 'thop'))
 
-
-def main(opt):
-    print(colorstr('detect: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
-    check_requirements(exclude=('tensorboard', 'thop'))
-    run(**vars(opt))
-
-
-if __name__ == "__main__":
-    opt = parse_opt()
-    main(opt)
+    if opt.update:  # update all models (to fix SourceChangeWarning)
+        for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
+            detect(opt=opt)
+            strip_optimizer(opt.weights)
+    else:
+        detect(opt=opt)
