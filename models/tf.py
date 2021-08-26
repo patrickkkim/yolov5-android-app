@@ -241,7 +241,7 @@ class tf_Detect(keras.layers.Layer):
                 y = tf.concat([xy, wh, y[..., 4:]], -1)
                 z.append(tf.reshape(y, [-1, 3 * ny * nx, self.no]))
 
-        return x if self.training else tf.concat(z, 1)
+        return x if self.training else (tf.concat(z, 1), x)
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
@@ -357,18 +357,18 @@ class tf_Model():
 
         # Add TensorFlow NMS
         if opt.tf_nms:
-            boxes = xywh2xyxy(x[..., :4])
-            probs = x[:, :, 4:5]
-            classes = x[:, :, 5:]
+            boxes = xywh2xyxy(x[0][..., :4])
+            probs = x[0][:, :, 4:5]
+            classes = x[0][:, :, 5:]
             scores = probs * classes
             if opt.agnostic_nms:
                 nms = agnostic_nms_layer()((boxes, classes, scores))
-                return nms
+                return nms, x[1]
             else:
                 boxes = tf.expand_dims(boxes, 2)
                 nms = tf.image.combined_non_max_suppression(
                     boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.score_thres, clip_boxes=False)
-                return nms
+                return nms, x[1]
 
         return x
 
