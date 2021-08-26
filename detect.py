@@ -241,7 +241,9 @@ def detect(opt):
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
             if opt.no_tf_nms:
-                pred = [torch.tensor(interpreter.get_tensor(output_details[i]['index']), device=device) for i in range(4)]
+                output_tensors = [interpreter.get_tensor(output_details[i]['index']) for i in range(4)]
+                output_indices = sorted([output_details[i]['index'] for i in range(4)])
+                pred = [torch.tensor(interpreter.get_tensor(i), device=device) for i in output_indices]
             elif not opt.tfl_detect:
                 output_data = interpreter.get_tensor(output_details[0]['index'])
                 pred = torch.tensor(output_data)
@@ -287,8 +289,8 @@ def detect(opt):
         if not opt.no_tf_nms:
             pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
         else:
-            # nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections = pred
-            valid_detections, nmsed_classes, nmsed_scores, nmsed_boxes = pred
+            nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections = pred
+            # valid_detections, nmsed_classes, nmsed_scores, nmsed_boxes = pred
             if not tf.__version__.startswith('1'):
                 nmsed_boxes = torch.tensor(nmsed_boxes.cpu().numpy())
                 nmsed_scores = torch.tensor(nmsed_scores.cpu().numpy())
