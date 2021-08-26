@@ -241,9 +241,8 @@ def detect(opt):
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
             if opt.no_tf_nms:
-                output_tensors = [interpreter.get_tensor(output_details[i]['index']) for i in range(4)]
-                output_indices = sorted([output_details[i]['index'] for i in range(4)])
-                pred = [torch.tensor(interpreter.get_tensor(i), device=device) for i in output_indices]
+                output_details = sorted(output_details, key=lambda v: v['name'])
+                pred = [torch.tensor(interpreter.get_tensor(output_details[i]['index']), device=device) for i in range(4)]
             elif not opt.tfl_detect:
                 output_data = interpreter.get_tensor(output_details[0]['index'])
                 pred = torch.tensor(output_data)
