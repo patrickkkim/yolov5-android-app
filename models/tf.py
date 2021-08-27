@@ -389,35 +389,27 @@ class agnostic_nms_layer(keras.layers.Layer):
 
 
 def agnostic_nms(x):
-    # boxes, classes, scores = x
-    # class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
-    # scores_inp = tf.reduce_max(scores, -1)
-    # selected_inds = tf.image.non_max_suppression(
-    #     boxes, scores_inp, max_output_size=opt.topk_all, iou_threshold=opt.iou_thres, score_threshold=opt.score_thres)
-    # selected_boxes = tf.gather(boxes, selected_inds)
-    # padded_boxes = tf.pad(selected_boxes,
-    #                       paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
-    #                       mode="CONSTANT", constant_values=0.0)
-    # selected_scores = tf.gather(scores_inp, selected_inds)
-    # padded_scores = tf.pad(selected_scores,
-    #                        paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
-    #                        mode="CONSTANT", constant_values=-1.0)
-    # selected_classes = tf.gather(class_inds, selected_inds)
-    # padded_classes = tf.pad(selected_classes,
-    #                         paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
-    #                         mode="CONSTANT", constant_values=-1.0)
-    # valid_detections = tf.shape(selected_inds)[0]
-    # return padded_boxes, padded_scores, padded_classes, valid_detections
     boxes, classes, scores = x
     class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
     scores_inp = tf.reduce_max(scores, -1)
-    selected_inds, valid_detections = tf.image.non_max_suppression_padded(
-        boxes, scores_inp, max_output_size=opt.topk_all, iou_threshold=opt.iou_thres,
-        score_threshold=opt.score_thres, pad_to_max_output_size=True)
+    selected_inds = tf.image.non_max_suppression(
+        boxes, scores_inp, max_output_size=opt.topk_all, iou_threshold=opt.iou_thres, score_threshold=opt.score_thres)
     selected_boxes = tf.gather(boxes, selected_inds)
+    padded_boxes = tf.pad(selected_boxes,
+                          paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
+                          mode="CONSTANT", constant_values=0.0)
     selected_scores = tf.gather(scores_inp, selected_inds)
+    padded_scores = tf.pad(selected_scores,
+                           paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
+                           mode="CONSTANT", constant_values=-1.0)
     selected_classes = tf.gather(class_inds, selected_inds)
-    return selected_boxes, selected_scores, selected_classes, valid_detections
+    padded_classes = tf.pad(selected_classes,
+                            paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
+                            mode="CONSTANT", constant_values=-1.0)
+    # tf.image.non_max_suppression return wrong no. of selected_indices in TFLite
+    # https://github.com/tensorflow/tensorflow/issues/51629
+    valid_detections = tf.reduce_sum(tf.where(selected_scores >= opt.score_thres, x=1, y=0))
+    return padded_boxes, padded_scores, padded_classes, valid_detections
 
 def xywh2xyxy(xywh):
     # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
