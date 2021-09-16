@@ -93,8 +93,9 @@ class tf_Conv(keras.layers.Layer):
         # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
 
         conv = keras.layers.Conv2D(
-            c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False,
-            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
+            c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False if hasattr(w, 'bn') else True,
+            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
+            bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
         self.conv = conv if s == 1 else keras.Sequential([tf_Pad(autopad(k, p)), conv])
         self.bn = tf_BN(w.bn) if hasattr(w, 'bn') else tf.identity
 
@@ -455,7 +456,7 @@ if __name__ == "__main__":
     img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
-    model = attempt_load(opt.weights, map_location=torch.device('cpu'), inplace=True, fuse=False)
+    model = attempt_load(opt.weights, map_location=torch.device('cpu'), inplace=True, fuse=True)
     model.model[-1].export = False  # set Detect() layer export=True
     y = model(img)  # dry run
     nc = y[0].shape[-1] - 5
