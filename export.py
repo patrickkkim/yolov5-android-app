@@ -52,10 +52,10 @@ import sys
 import time
 import warnings
 from pathlib import Path
-from packaging.version import parse as parse_version
 
 import torch
 import torch.nn as nn
+from packaging.version import parse as parse_version
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 FILE = Path(__file__).resolve()
