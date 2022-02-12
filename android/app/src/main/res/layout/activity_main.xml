@@ -7,218 +7,71 @@
     android:background="#778899"
     tools:context=".MainActivity">
 
-    <LinearLayout
-        android:id="@+id/linearLayout"
-        android:layout_width="match_parent"
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
-        android:orientation="horizontal"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="8dp"
+        android:backgroundTint="#FF7171"
+        android:drawableStart="@drawable/sunglass_button"
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="60dp"
+        android:text="안내 시작"
+        android:textAlignment="center"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="40sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <ImageView
-            android:id="@+id/trafficlight_image"
-            android:layout_width="152dp"
-            android:layout_height="255dp"
-            app:srcCompat="@drawable/trafficlight" />
-
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="287dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="right"
-            android:layout_weight="1"
-            android:text="\n시각장애인을\n위한\n보행 보조 앱"
-            android:textSize="48sp"
-            android:textStyle="bold" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/linearLayout2"
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="8dp"
+        android:backgroundTint="#ffb871"
+        android:drawableStart="@drawable/google_map_button"
+        android:paddingEnd="32dp"
+        android:paddingVertical="40dp"
+        android:text="내 위치"
+        android:textAlignment="center"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="40sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout">
+        app:layout_constraintTop_toBottomOf="@+id/button" />
 
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/sunglass_image"
-                android:layout_width="80dp"
-                android:layout_height="102dp"
-                app:srcCompat="@drawable/sunglass" />
-
-            <Button
-                android:id="@+id/sunglass_connect"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="10dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginEnd="10dp"
-                android:layout_marginBottom="20dp"
-                android:backgroundTint="@color/white"
-                android:textColor="@color/black"
-                android:gravity="center"
-                android:text="연결"
-                android:textSize="34sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/googlemap_image"
-                android:layout_width="80dp"
-                android:layout_height="102dp"
-                app:srcCompat="@drawable/google_map" />
-
-            <Button
-                android:id="@+id/googlemap_connect"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="10dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginEnd="10dp"
-                android:layout_marginBottom="20dp"
-                android:backgroundTint="@color/white"
-                android:textColor="@color/black"
-                android:gravity="center"
-                android:text="내 위치"
-                android:textSize="34sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/setting_image"
-                android:layout_width="80dp"
-                android:layout_height="102dp"
-                android:background="#00ffffff"
-                app:srcCompat="@drawable/voice" />
-
-            <Button
-                android:id="@+id/setting_voice"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="10dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginEnd="10dp"
-                android:layout_marginBottom="20dp"
-                android:backgroundTint="@color/white"
-                android:textColor="@color/black"
-                android:gravity="center"
-                android:text="음성설정"
-                android:textSize="34sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-
-            <ImageView
-                android:id="@+id/arrow1"
-                android:layout_width="60dp"
-                android:layout_height="102dp"
-                android:gravity="right"
-                app:srcCompat="@drawable/arrow" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="0.1" />
-
-            <ImageView
-                android:id="@+id/arrow2"
-                android:layout_width="60dp"
-                android:layout_height="102dp"
-                app:srcCompat="@drawable/arrow" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="0.1" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/braile_blocks1"
-                android:layout_width="60dp"
-                android:layout_height="102dp"
-                android:gravity="right"
-                app:srcCompat="@drawable/braile_blocks" />
-
-            <ImageView
-                android:id="@+id/braile_blocks2"
-                android:layout_width="60dp"
-                android:layout_height="102dp"
-                android:gravity="right"
-                app:srcCompat="@drawable/braile_blocks" />
-
-            <ImageView
-                android:id="@+id/braile_blocks3"
-                android:layout_width="60dp"
-                android:layout_height="102dp"
-                android:gravity="right"
-                app:srcCompat="@drawable/braile_blocks" />
-
-            <ImageView
-                android:id="@+id/braile_blocks4"
-                android:layout_width="60dp"
-                android:layout_height="102dp"
-                android:gravity="right"
-                app:srcCompat="@drawable/braile_blocks" />
-
-            <ImageView
-                android:id="@+id/braile_blocks5"
-                android:layout_width="60dp"
-                android:layout_height="102dp"
-                android:gravity="right"
-                app:srcCompat="@drawable/braile_blocks" />
-
-            <ImageView
-                android:id="@+id/braile_blocks6"
-                android:layout_width="60dp"
-                android:layout_height="102dp"
-                android:gravity="right"
-                app:srcCompat="@drawable/braile_blocks" />
-
-            <ImageView
-                android:id="@+id/braile_blocks7"
-                android:layout_width="60dp"
-                android:layout_height="102dp"
-                app:srcCompat="@drawable/braile_blocks" />
-
-
-        </LinearLayout>
-    </LinearLayout>
+    <Button
+        android:id="@+id/button3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="8dp"
+        android:backgroundTint="#ff71b8"
+        android:drawableStart="@drawable/voice_button"
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="28dp"
+        android:text="설정"
+        android:textAlignment="center"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="40sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button2" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
