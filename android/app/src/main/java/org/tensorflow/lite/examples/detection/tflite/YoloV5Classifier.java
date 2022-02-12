@@ -24,6 +24,7 @@ import android.util.Log;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.Tensor;
 import org.tensorflow.lite.examples.detection.MainActivity;
+import org.tensorflow.lite.examples.detection.MainActivityOriginal;
 import org.tensorflow.lite.examples.detection.env.Logger;
 import org.tensorflow.lite.examples.detection.env.Utils;
 import org.tensorflow.lite.gpu.GpuDelegate;
@@ -211,7 +212,7 @@ public class YoloV5Classifier implements Classifier {
 
     @Override
     public float getObjThresh() {
-        return MainActivity.MINIMUM_CONFIDENCE_TF_OD_API;
+        return MainActivityOriginal.MINIMUM_CONFIDENCE_TF_OD_API;
     }
 
     private static final Logger LOGGER = new Logger();
@@ -453,6 +454,15 @@ public class YoloV5Classifier implements Classifier {
         Log.d("YoloV5Classifier", "detect end");
         final ArrayList<Recognition> recognitions = nms(detections);
 //        final ArrayList<Recognition> recognitions = detections;
+
+
+
+        /**
+         * Custom log function
+         **/
+        logDetectedData(recognitions);
+
+
         return recognitions;
     }
 
@@ -507,4 +517,16 @@ public class YoloV5Classifier implements Classifier {
 
         return true;
     }
+
+
+
+    /**
+     *  Custom functions made by our team
+     **/
+    private void logDetectedData(ArrayList<Recognition> recognitions) {
+        for (Recognition recognition : recognitions) {
+            Log.d("YoloV5Classifier", recognition.toString());
+        }
+    }
+
 }

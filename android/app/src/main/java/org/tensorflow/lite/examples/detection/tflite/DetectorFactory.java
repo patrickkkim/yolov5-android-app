@@ -5,10 +5,9 @@ import android.content.res.AssetManager;
 import java.io.IOException;
 
 public class DetectorFactory {
-    public static YoloV5Classifier getDetector(
-            final AssetManager assetManager,
-            final String modelFilename)
-            throws IOException {
+    public static YoloV5Classifier getDetector(final AssetManager assetManager, final String modelFilename)
+            throws IOException
+    {
         String labelFilename = null;
         boolean isQuantized = false;
         int inputSize = 0;
@@ -46,6 +45,17 @@ public class DetectorFactory {
                     10,13, 16,30, 33,23, 30,61, 62,45, 59,119, 116,90, 156,198, 373,326
             };
         }
+
+        else if (modelFilename.equals("best-fp16.tflite")) {
+            labelFilename = "file:///android_asset/labels.txt";
+            inputSize = 640;
+            output_width = new int[]{80, 40, 20};
+            anchors = new int[]{
+                    10,13, 16,30, 33,23, 30,61, 62,45, 59,119, 116,90, 156,198, 373,326
+            };
+        }
+
+
         return YoloV5Classifier.create(assetManager, modelFilename, labelFilename, isQuantized,
                 inputSize);
     }
