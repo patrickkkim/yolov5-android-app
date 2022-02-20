@@ -16,15 +16,25 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        setting_voice=(Button) findViewById(R.id.setting_voice);
-        sunglass_connect=(Button) findViewById(R.id.sunglass_connect);
-        googlemap_connect=(Button) findViewById(R.id.googlemap_connect);
+        sunglass_connect=(Button) findViewById(R.id.button);
+        googlemap_connect=(Button) findViewById(R.id.button2);
+        setting_voice=(Button) findViewById(R.id.button3);
 
+
+        sunglass_connect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, DetectorActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            }
+        });
 
         setting_voice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this, VoiceOption.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
             }
         });

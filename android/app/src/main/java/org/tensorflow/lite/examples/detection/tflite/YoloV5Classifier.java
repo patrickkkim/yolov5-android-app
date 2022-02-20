@@ -15,6 +15,7 @@ limitations under the License.
 
 package org.tensorflow.lite.examples.detection.tflite;
 
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.RectF;
@@ -23,8 +24,10 @@ import android.util.Log;
 
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.Tensor;
+import org.tensorflow.lite.examples.detection.DetectorActivity;
 import org.tensorflow.lite.examples.detection.MainActivity;
 import org.tensorflow.lite.examples.detection.MainActivityOriginal;
+import org.tensorflow.lite.examples.detection.TextToSpeech;
 import org.tensorflow.lite.examples.detection.env.Logger;
 import org.tensorflow.lite.examples.detection.env.Utils;
 import org.tensorflow.lite.gpu.GpuDelegate;
@@ -43,6 +46,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Vector;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 /**
@@ -460,7 +464,7 @@ public class YoloV5Classifier implements Classifier {
         /**
          * Custom log function
          **/
-        logDetectedData(recognitions);
+        // logDetectedData(recognitions);
 
 
         return recognitions;
@@ -528,5 +532,4 @@ public class YoloV5Classifier implements Classifier {
             Log.d("YoloV5Classifier", recognition.toString());
         }
     }
-
 }

@@ -16,6 +16,7 @@
 
 package org.tensorflow.lite.examples.detection;
 
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -26,15 +27,26 @@ import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
+import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.tensorflow.lite.examples.detection.customview.OverlayView;
 import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallback;
@@ -79,6 +91,44 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private MultiBoxTracker tracker;
 
     private BorderedText borderedText;
+
+    private Map<Integer, String> labelTable = new HashMap<>();
+    private Map<String, String> koreanLabelTable = new HashMap<>();
+    private TextToSpeech tts = null;
+
+    @Override
+    public void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        try {
+            AssetManager am = getResources().getAssets();
+            InputStream is = am.open("labels.txt");
+            BufferedReader bf = new BufferedReader(new InputStreamReader(is));
+            int index = 0;
+            String line;
+            while ((line = bf.readLine()) != null) {
+                labelTable.put(index, line);
+                index++;
+            }
+            is.close();
+            bf.close();
+
+            is = am.open("korean_labels.txt");
+            bf = new BufferedReader(new InputStreamReader(is));
+            while ((line = bf.readLine()) != null) {
+                String[] labels = line.split(",");
+                String englishLabel = labels[0];
+                String koreanLabel = labels[1];
+                koreanLabelTable.put(englishLabel, koreanLabel);
+            }
+            is.close();
+            bf.close();
+        } catch (Exception e) {
+            Log.d("File", "Labels file not found.");
+            e.printStackTrace();
+        }
+
+        tts = new TextToSpeech(this);
+    }
 
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
@@ -245,6 +295,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         final long startTime = SystemClock.uptimeMillis();
                         final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
                         lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
+                        Log.d("ProcessTime", Long.toString(lastProcessingTimeMs) + "ms");
 
                         Log.e("CHECK", "run: " + results.size());
 
@@ -291,6 +342,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                                         showInference(lastProcessingTimeMs + "ms");
                                     }
                                 });
+
+                        /** Custom **/
+                        if (tts != null) {
+                            readDetectedData(results);
+                        }
                     }
                 });
     }
@@ -319,5 +375,23 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     @Override
     protected void setNumThreads(final int numThreads) {
         runInBackground(() -> detector.setNumThreads(numThreads));
+    }
+
+
+
+    /** Custom Methods **/
+    private void readDetectedData(List<Classifier.Recognition> recognitions) {
+        int dataIndex = getRandDetectedData(recognitions);
+        if (dataIndex != -1) {
+            String englishLabel = labelTable.get(dataIndex);
+            String koreanLabel = koreanLabelTable.get(englishLabel);
+            tts.readText(koreanLabel);
+        }
+    }
+
+    private int getRandDetectedData(List<Classifier.Recognition> recognitions) {
+        if (recognitions.size() == 0) { return -1; }
+        int randData = ThreadLocalRandom.current().nextInt(0, recognitions.size());
+        return recognitions.get(randData).getDetectedClass();
     }
 }
