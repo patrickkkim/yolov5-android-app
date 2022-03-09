@@ -1,11 +1,8 @@
 /* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -97,9 +94,11 @@ public class YoloV5Classifier implements Classifier {
                 d.nnapiDelegate = null;
                 // Initialize interpreter with NNAPI delegate for Android Pie or above
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    d.nnapiDelegate = new NnApiDelegate();
+                    NnApiDelegate.Options nnapi_options = new NnApiDelegate.Options();
+                    nnapi_options.setAllowFp16(true);
+                    d.nnapiDelegate = new NnApiDelegate(nnapi_options);
                     options.addDelegate(d.nnapiDelegate);
-                    options.setNumThreads(NUM_THREADS);
+//                    options.setNumThreads(NUM_THREADS);
 //                    options.setUseNNAPI(false);
 //                    options.setAllowFp16PrecisionForFp32(true);
 //                    options.setAllowBufferHandleOutput(true);
@@ -209,7 +208,9 @@ public class YoloV5Classifier implements Classifier {
     }
 
     public void useNNAPI() {
-        nnapiDelegate = new NnApiDelegate();
+        NnApiDelegate.Options nnapi_options = new NnApiDelegate.Options();
+        nnapi_options.setAllowFp16(true);
+        nnapiDelegate = new NnApiDelegate(nnapi_options);
         tfliteOptions.addDelegate(nnapiDelegate);
         recreateInterpreter();
     }
@@ -229,7 +230,7 @@ public class YoloV5Classifier implements Classifier {
     //config yolo
     private int INPUT_SIZE = -1;
 
-//    private int[] OUTPUT_WIDTH;
+    //    private int[] OUTPUT_WIDTH;
 //    private int[][] MASKS;
 //    private int[] ANCHORS;
     private  int output_box;
@@ -239,9 +240,9 @@ public class YoloV5Classifier implements Classifier {
     private static final int NUM_BOXES_PER_BLOCK = 3;
 
     // Number of threads in the java app
-    private static final int NUM_THREADS = 1;
+    private static final int NUM_THREADS = 4;
     private static boolean isNNAPI = false;
-    private static boolean isGPU = false;
+    private static boolean isGPU = true;
 
     private boolean isModelQuantized;
 
@@ -271,8 +272,7 @@ public class YoloV5Classifier implements Classifier {
     private float oup_scale;
     private int oup_zero_point;
     private int numClass;
-    private YoloV5Classifier() {
-    }
+    private YoloV5Classifier() {}
 
     //non maximum suppression
     protected ArrayList<Recognition> nms(ArrayList<Recognition> list) {
@@ -390,7 +390,7 @@ public class YoloV5Classifier implements Classifier {
 //        float[][][] outbuf = new float[1][output_box][labels.size() + 5];
         outData.rewind();
         outputMap.put(0, outData);
-        Log.d("YoloV5Classifier", "mObjThresh: " + getObjThresh());
+//        Log.d("YoloV5Classifier", "mObjThresh: " + getObjThresh());
 
         Object[] inputArray = {imgData};
         tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
@@ -401,7 +401,7 @@ public class YoloV5Classifier implements Classifier {
         ArrayList<Recognition> detections = new ArrayList<Recognition>();
 
         float[][][] out = new float[1][output_box][numClass + 5];
-        Log.d("YoloV5Classifier", "out[0] detect start");
+//        Log.d("YoloV5Classifier", "out[0] detect start");
         for (int i = 0; i < output_box; ++i) {
             for (int j = 0; j < numClass + 5; ++j) {
                 if (isModelQuantized){
@@ -441,8 +441,8 @@ public class YoloV5Classifier implements Classifier {
 
                 final float w = out[0][i][2];
                 final float h = out[0][i][3];
-                Log.d("YoloV5Classifier",
-                        Float.toString(xPos) + ',' + yPos + ',' + w + ',' + h);
+//                Log.d("YoloV5Classifier",
+//                        Float.toString(xPos) + ',' + yPos + ',' + w + ',' + h);
 
                 final RectF rect =
                         new RectF(
@@ -464,7 +464,7 @@ public class YoloV5Classifier implements Classifier {
         /**
          * Custom log function
          **/
-        // logDetectedData(recognitions);
+//         logDetectedData(recognitions);
 
 
         return recognitions;
@@ -529,7 +529,7 @@ public class YoloV5Classifier implements Classifier {
      **/
     private void logDetectedData(ArrayList<Recognition> recognitions) {
         for (Recognition recognition : recognitions) {
-            Log.d("YoloV5Classifier", recognition.toString());
+            Log.d("YoloV5Classifier", recognition.getLocation().toString());
         }
     }
 }

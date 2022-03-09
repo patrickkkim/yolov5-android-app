@@ -32,6 +32,8 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
@@ -99,6 +101,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        tts = new TextToSpeech(this);
+
         try {
             AssetManager am = getResources().getAssets();
             InputStream is = am.open("labels.txt");
@@ -126,8 +131,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             Log.d("File", "Labels file not found.");
             e.printStackTrace();
         }
-
-        tts = new TextToSpeech(this);
     }
 
     @Override
@@ -291,6 +294,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 new Runnable() {
                     @Override
                     public void run() {
+                        if (tts != null && tts.isLoading()) {
+                            tts.readText("로딩이 끝났습니다.");
+                            tts.setLoading(false);
+                        }
+
                         LOGGER.i("Running detection on image " + currTimestamp);
                         final long startTime = SystemClock.uptimeMillis();
                         final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
@@ -344,8 +352,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                                 });
 
                         /** Custom **/
-                        if (tts != null) {
-                            readDetectedData(results);
+                        if (tts != null && ! tts.IsSpeaking()) {
+                            readDetectedData(mappedRecognitions);
                         }
                     }
                 });
@@ -382,16 +390,44 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     /** Custom Methods **/
     private void readDetectedData(List<Classifier.Recognition> recognitions) {
         int dataIndex = getRandDetectedData(recognitions);
+        String location = null;
+        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(recognitions);
+
         if (dataIndex != -1) {
-            String englishLabel = labelTable.get(dataIndex);
+            int labelIndex = recognitions.get(dataIndex).getDetectedClass();
+            String englishLabel = labelTable.get(labelIndex);
             String koreanLabel = koreanLabelTable.get(englishLabel);
-            tts.readText(koreanLabel);
+            location = tts.inputLocation(detectedLocations.get(dataIndex));
+            tts.readText(location+"에 "+koreanLabel+" 있습니다.");
+            //getDelay();
         }
     }
 
     private int getRandDetectedData(List<Classifier.Recognition> recognitions) {
         if (recognitions.size() == 0) { return -1; }
         int randData = ThreadLocalRandom.current().nextInt(0, recognitions.size());
-        return recognitions.get(randData).getDetectedClass();
+        return randData;
     }
+
+    private void getDelay() {
+        tts.readDelay();
+    }
+
+    private ArrayList<ArrayList<Double>> getDetectedDataLocation(List<Classifier.Recognition> recognitions) {
+        ArrayList<ArrayList<Double>> detectedLocations = new ArrayList<>();
+
+        for (Classifier.Recognition recognition : recognitions) {
+            ArrayList<Double> locations = new ArrayList<>();
+            RectF rectLocation = recognition.getLocation();
+            locations.add((double) rectLocation.centerY());
+            locations.add((double) rectLocation.centerX());
+            locations.add((double) rectLocation.height());
+            locations.add((double) rectLocation.width());
+            detectedLocations.add(locations);
+        }
+        return detectedLocations;
+    }
+
+
+
 }
