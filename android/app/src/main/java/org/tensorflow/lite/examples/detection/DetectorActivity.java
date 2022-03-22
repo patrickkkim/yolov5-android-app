@@ -82,6 +82,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private Bitmap rgbFrameBitmap = null;
     private Bitmap croppedBitmap = null;
     private Bitmap cropCopyBitmap = null;
+    private VoiceOption voiceOption=new VoiceOption();
 
     private boolean computingDetection = false;
 
@@ -352,8 +353,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                                 });
 
                         /** Custom **/
-                        if (tts != null && ! tts.IsSpeaking()) {
+                        if (tts != null && !tts.IsSpeaking()) {
                             readDetectedData(mappedRecognitions);
+                            Toast.makeText(getApplicationContext(), "speed:"+Float.toString(tts.getSpeed()),Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -398,7 +400,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             String englishLabel = labelTable.get(labelIndex);
             String koreanLabel = koreanLabelTable.get(englishLabel);
             location = tts.inputLocation(detectedLocations.get(dataIndex));
-            tts.readText(location+"에 "+koreanLabel+" 있습니다.");
+            tts.readLocation(location,koreanLabel);
             //getDelay();
         }
     }

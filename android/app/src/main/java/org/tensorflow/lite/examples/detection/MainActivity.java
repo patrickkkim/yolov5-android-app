@@ -69,7 +69,6 @@ public class MainActivity extends AppCompatActivity {
                 String address = getCurrentAddress(latitude, longitude);
                 //editText 문장 읽기
                 tts.readText("현재 위치는"+ address +"입니다.");
-
                 Toast.makeText(MainActivity.this, "현재위치 \n위도:"+ latitude + "\n경도:"+ longitude + "\n주소:"+address
                         , Toast.LENGTH_LONG).show();
             }
