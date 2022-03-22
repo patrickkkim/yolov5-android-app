@@ -25,8 +25,6 @@ public class VoiceOption extends AppCompatActivity {
     //private EditText editText;
     //private TextView random, random2;
     private Button voicefrequency,voicefrequency2,voicefast,voicelow;
-    public static float speed=1;
-    public int frequency=1;
     /*
     private final double border_Left=(double)1/640*212;
     private final double border_Lower=(double)1/640*212;
@@ -66,13 +64,8 @@ public class VoiceOption extends AppCompatActivity {
         voicefast.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view){
-                if(speed>=2){}
-
-                else {
-                    // speed += 0.2;
-                    tts.incrementSpeed();
-                    Toast.makeText(getApplicationContext(), "speed:"+Float.toString(tts.getSpeed()),Toast.LENGTH_SHORT).show();
-                }
+                // speed += 0.2;
+                tts.incrementSpeed();
                 //tts.getSpeed(2.0);   //읽는 속도 2배 빠르게
                 //editText 문장 읽기
             }
@@ -81,14 +74,7 @@ public class VoiceOption extends AppCompatActivity {
         voicelow.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view){
-                if(speed<=0){}
-
-                else {
-                    tts.decrementSpeed();
-                    Toast.makeText(getApplicationContext(), "speed:"+Float.toString(tts.getSpeed()),Toast.LENGTH_SHORT).show();
-                }
-
-
+                tts.decrementSpeed();
             }
         });
     }
