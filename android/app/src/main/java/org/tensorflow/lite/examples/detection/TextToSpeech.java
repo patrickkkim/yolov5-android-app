@@ -41,6 +41,7 @@ public class TextToSpeech {
 
     }
 
+    // Speak label and location
     public void readLocation(String Location, String label) {
         // 빈도 검사
         long timePassed = Math.abs(System.currentTimeMillis() - getLastSpokeTime());
@@ -65,6 +66,7 @@ public class TextToSpeech {
         tts.speak("현재 위치는"+ text +"입니다.", android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
     }
 
+    // Return the location of object
     public String inputLocation(ArrayList<Double> location) {
         ArrayList<Double> i = location;
 

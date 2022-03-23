@@ -43,6 +43,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -390,19 +392,41 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
 
     /** Custom Methods **/
+    // Speak label and location
     private void readDetectedData(List<Classifier.Recognition> recognitions) {
-        int dataIndex = getRandDetectedData(recognitions);
-        String location = null;
-        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(recognitions);
-
-        if (dataIndex != -1) {
-            int labelIndex = recognitions.get(dataIndex).getDetectedClass();
-            String englishLabel = labelTable.get(labelIndex);
-            String koreanLabel = koreanLabelTable.get(englishLabel);
-            location = tts.inputLocation(detectedLocations.get(dataIndex));
-            tts.readLocation(location,koreanLabel);
-            //getDelay();
+        List<Classifier.Recognition> sortedRecognition  = getSortedDetectedDataList(recognitions);
+        for(Classifier.Recognition sortedRecognitiond : sortedRecognition){
+            System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"+sortedRecognitiond+"@");
         }
+        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(sortedRecognition);
+        String location = null;
+
+        if (sortedRecognition != null) {
+            for(int i=0; i<sortedRecognition.size(); i++) {
+                int labelIndex = sortedRecognition.get(i).getDetectedClass();
+                String englishLabel = labelTable.get(labelIndex);
+                String koreanLabel = koreanLabelTable.get(englishLabel);
+                location = tts.inputLocation(detectedLocations.get(i));
+                tts.readLocation(location,koreanLabel);
+            }
+
+
+        }
+    }
+
+    // Get detected data according to confidence and location
+    private List<Classifier.Recognition> getSortedDetectedDataList(List<Classifier.Recognition> recognitions) {
+        if (recognitions.size() == 0) { return null; }
+
+        List<Classifier.Recognition> sortedRecognitions = new LinkedList<Classifier.Recognition>();
+        sortedRecognitions.addAll(recognitions);
+        for(int i=0; i<sortedRecognitions.size(); i++){
+            if(sortedRecognitions.get(i).getConfidence() < sortedRecognitions.get(i+1).getConfidence()) {
+                sortedRecognitions.add(i, sortedRecognitions.get(i+1));
+                sortedRecognitions.remove(i+1);
+            }
+        }
+        return sortedRecognitions;
     }
 
     private int getRandDetectedData(List<Classifier.Recognition> recognitions) {
