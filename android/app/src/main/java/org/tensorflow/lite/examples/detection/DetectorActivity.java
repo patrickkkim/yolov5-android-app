@@ -415,6 +415,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
 
     // Get detected data according to confidence and location
+    // 여기 문제 있음
     private List<Classifier.Recognition> getSortedDetectedDataList(List<Classifier.Recognition> recognitions) {
         if (recognitions.size() == 0) { return null; }
 
