@@ -55,7 +55,7 @@ public class TextToSpeech {
     }
 
     public void readDelay() {
-        tts.playSilence(5000, android.speech.tts.TextToSpeech.QUEUE_ADD,null);
+        tts.playSilence(2000, android.speech.tts.TextToSpeech.QUEUE_ADD,null);
     }
 
     public boolean IsSpeaking(){

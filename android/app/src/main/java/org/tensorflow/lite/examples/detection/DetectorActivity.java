@@ -358,6 +358,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         if (tts != null && !tts.IsSpeaking()) {
                             readDetectedData(mappedRecognitions);
                             Toast.makeText(getApplicationContext(), "speed:"+Float.toString(tts.getSpeed()),Toast.LENGTH_SHORT).show();
+                            getDelay();
                         }
                     }
                 });
@@ -395,40 +396,42 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     // Speak label and location
     private void readDetectedData(List<Classifier.Recognition> recognitions) {
         List<Classifier.Recognition> sortedRecognition  = getSortedDetectedDataList(recognitions);
-        for(Classifier.Recognition sortedRecognitiond : sortedRecognition){
-            System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"+sortedRecognitiond+"@");
-        }
         ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(sortedRecognition);
         String location = null;
 
         if (sortedRecognition != null) {
-            for(int i=0; i<sortedRecognition.size(); i++) {
+            for (int i = 0; i < sortedRecognition.size(); i++) {
                 int labelIndex = sortedRecognition.get(i).getDetectedClass();
                 String englishLabel = labelTable.get(labelIndex);
                 String koreanLabel = koreanLabelTable.get(englishLabel);
                 location = tts.inputLocation(detectedLocations.get(i));
-                tts.readLocation(location,koreanLabel);
+                tts.readLocation(location, koreanLabel);
             }
-
-
+            //getDelay();
         }
     }
 
     // Get detected data according to confidence and location
-    // 여기 문제 있음
     private List<Classifier.Recognition> getSortedDetectedDataList(List<Classifier.Recognition> recognitions) {
-        if (recognitions.size() == 0) { return null; }
-
-        List<Classifier.Recognition> sortedRecognitions = new LinkedList<Classifier.Recognition>();
-        sortedRecognitions.addAll(recognitions);
-        for(int i=0; i<sortedRecognitions.size(); i++){
-            if(sortedRecognitions.get(i).getConfidence() < sortedRecognitions.get(i+1).getConfidence()) {
-                sortedRecognitions.add(i, sortedRecognitions.get(i+1));
-                sortedRecognitions.remove(i+1);
+        if(recognitions.size() < 2) {
+        }
+        else {
+            Classifier.Recognition temp;
+            for(int i=0; i< recognitions.size(); i++){
+                for(int j=0; j<(recognitions.size()-1); j++){
+                    if(recognitions.get(j).getConfidence() < recognitions.get(j+1).getConfidence()){
+                        temp = recognitions.get(j);
+                        recognitions.remove(j);
+                        recognitions.add(j+1, temp);
+                    }
+                }
             }
         }
-        return sortedRecognitions;
+        return recognitions;
     }
+
+
+
 
     private int getRandDetectedData(List<Classifier.Recognition> recognitions) {
         if (recognitions.size() == 0) { return -1; }
