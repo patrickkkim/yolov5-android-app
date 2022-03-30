@@ -16,8 +16,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
     <application
@@ -31,6 +31,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.ObjectDetection">
         <activity
+            android:name=".Manual"
+            android:exported="false" />
+        <activity
             android:name=".VoiceOption"
             android:exported="false" />
         <activity
@@ -38,18 +41,17 @@
             android:exported="false" />
         <activity
             android:name=".DetectorActivity"
+            android:exported="false"
             android:label="@string/tfe_od_app_name"
-            android:screenOrientation="portrait"
-            android:exported="false" />
-        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".MainActivity"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
     </application>
 
