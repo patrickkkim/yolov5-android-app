@@ -21,7 +21,7 @@ public class TextToSpeech {
     private boolean isLoading = true;
     private long lastSpokeTime;
     private static float speed = 1;
-    private static float frequency = 1;
+    private static float frequency = 20000;
 
     public TextToSpeech(Context context) {
         //TTS 생성후, OnInitListener로 초기화
@@ -38,19 +38,13 @@ public class TextToSpeech {
 
     public void readText(String text) {
         tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
-
     }
 
     public void readLocation(String Location, String label) {
-        // 빈도 검사
-        long timePassed = Math.abs(System.currentTimeMillis() - getLastSpokeTime());
-        if (timePassed < (1000 * getFrequency())) return;
-
         tts.speak(Location+"에 "+label+" 있습니다.", android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
         // 시간 기록
-        while (tts.isSpeaking()) {
-            this.setLastSpokeTime(System.currentTimeMillis());
-        }
+        while (tts.isSpeaking()) {}
+        lastSpokeTime = System.currentTimeMillis();
     }
 
     public void readDelay() {
@@ -112,6 +106,10 @@ public class TextToSpeech {
         TextToSpeech.setSpeed(speed - (float) 0.2);
     }
 
+    public long getLastSpokeTimePassed() {
+        return Math.abs(System.currentTimeMillis() - lastSpokeTime);
+    }
+
     public static float getFrequency() {
         return frequency;
     }
@@ -119,12 +117,11 @@ public class TextToSpeech {
         TextToSpeech.frequency = frequency;
     }
     public void incrementFreq() {
-        TextToSpeech.setFrequency(frequency + (float) 1);
+        TextToSpeech.setFrequency(frequency + (float) 1000);
     }
     public void decrementFreq() {
-        TextToSpeech.setFrequency(frequency - (float) 1);
+        TextToSpeech.setFrequency(frequency - (float) 1000);
     }
-
     public long getLastSpokeTime() {
         return lastSpokeTime;
     }

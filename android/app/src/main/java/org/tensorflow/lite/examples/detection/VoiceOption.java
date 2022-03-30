@@ -22,9 +22,10 @@ import java.util.Random;
 public class VoiceOption extends AppCompatActivity {
 
     private TextToSpeech tts;
+
     //private EditText editText;
     //private TextView random, random2;
-    private Button voicefrequency,voicefrequency2,voicefast,voicelow;
+    private Button voicefrequency,voicefrequency2,voicefast,voicelow, stopmode;
     /*
     private final double border_Left=(double)1/640*212;
     private final double border_Lower=(double)1/640*212;
@@ -37,14 +38,13 @@ public class VoiceOption extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_voice_option);
         //editText=(EditText)  findViewById(R.id.editText);
-        voicefrequency=(Button) findViewById(R.id.voicefrequency);
-        voicefrequency2=(Button) findViewById(R.id.voicefrequency2);
-        voicefast=(Button) findViewById(R.id.voicefast);
-        voicelow=(Button) findViewById(R.id.voicelow);
+        voicefrequency = (Button) findViewById(R.id.voicefrequency);
+        voicefrequency2 = (Button) findViewById(R.id.voicefrequency2);
+        voicefast = (Button) findViewById(R.id.voicefast);
+        voicelow = (Button) findViewById(R.id.voicelow);
+        stopmode = (Button) findViewById(R.id.stopmode);
 
         tts = new TextToSpeech(this);
-
-
 
 
         voicefrequency.setOnClickListener(new View.OnClickListener() {
@@ -75,6 +75,22 @@ public class VoiceOption extends AppCompatActivity {
             @Override
             public void onClick(View view){
                 tts.decrementSpeed();
+            }
+        });
+
+        stopmode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                MotionDetector motionDetector = MotionDetector.getInstance(VoiceOption.this, tts);
+                motionDetector.setDetectMode(!MotionDetector.isDetectMode());
+                String output = "";
+                if (MotionDetector.isDetectMode()) {
+                    output = "정지 모드 활성";
+                } else {
+                    output = "정지 모드 비활성";
+                }
+                Toast.makeText(VoiceOption.this, output, Toast.LENGTH_SHORT).show();
+                tts.readText(output);
             }
         });
     }
