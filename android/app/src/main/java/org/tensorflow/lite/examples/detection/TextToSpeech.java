@@ -40,6 +40,7 @@ public class TextToSpeech {
         tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
     }
 
+    // Speak label and location
     public void readLocation(String Location, String label) {
         tts.speak(Location+"에 "+label+" 있습니다.", android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
         // 시간 기록
@@ -48,7 +49,7 @@ public class TextToSpeech {
     }
 
     public void readDelay() {
-        tts.playSilence(5000, android.speech.tts.TextToSpeech.QUEUE_ADD,null);
+        tts.playSilence(2000, android.speech.tts.TextToSpeech.QUEUE_ADD,null);
     }
 
     public boolean IsSpeaking(){
@@ -59,6 +60,7 @@ public class TextToSpeech {
         tts.speak("현재 위치는"+ text +"입니다.", android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
     }
 
+    // Return the location of object
     public String inputLocation(ArrayList<Double> location) {
         ArrayList<Double> i = location;
 

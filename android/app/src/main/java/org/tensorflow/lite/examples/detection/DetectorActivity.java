@@ -43,6 +43,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -409,20 +411,45 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
 
     /** Custom Methods **/
+    // Speak label and location
     private void readDetectedData(List<Classifier.Recognition> recognitions) {
-        int dataIndex = getRandDetectedData(recognitions);
+        List<Classifier.Recognition> sortedRecognition  = getSortedDetectedDataList(recognitions);
+        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(sortedRecognition);
         String location = null;
-        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(recognitions);
 
-        if (dataIndex != -1) {
-            int labelIndex = recognitions.get(dataIndex).getDetectedClass();
-            String englishLabel = labelTable.get(labelIndex);
-            String koreanLabel = koreanLabelTable.get(englishLabel);
-            location = tts.inputLocation(detectedLocations.get(dataIndex));
-            tts.readLocation(location,koreanLabel);
+        if (sortedRecognition != null) {
+            for (int i = 0; i < sortedRecognition.size(); i++) {
+                int labelIndex = sortedRecognition.get(i).getDetectedClass();
+                String englishLabel = labelTable.get(labelIndex);
+                String koreanLabel = koreanLabelTable.get(englishLabel);
+                location = tts.inputLocation(detectedLocations.get(i));
+                tts.readLocation(location, koreanLabel);
+            }
             //getDelay();
         }
     }
+
+    // Get detected data according to confidence and location
+    private List<Classifier.Recognition> getSortedDetectedDataList(List<Classifier.Recognition> recognitions) {
+        if(recognitions.size() < 2) {
+        }
+        else {
+            Classifier.Recognition temp;
+            for(int i=0; i< recognitions.size(); i++){
+                for(int j=0; j<(recognitions.size()-1); j++){
+                    if(recognitions.get(j).getConfidence() < recognitions.get(j+1).getConfidence()){
+                        temp = recognitions.get(j);
+                        recognitions.remove(j);
+                        recognitions.add(j+1, temp);
+                    }
+                }
+            }
+        }
+        return recognitions;
+    }
+
+
+
 
     private int getRandDetectedData(List<Classifier.Recognition> recognitions) {
         if (recognitions.size() == 0) { return -1; }
