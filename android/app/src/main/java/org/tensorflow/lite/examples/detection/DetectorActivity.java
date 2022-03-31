@@ -363,7 +363,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
                     /** Custom **/
                     if (tts != null && !tts.IsSpeaking()) {
-                        if (!motionDetector.isMoving() && (tts.getLastSpokeTimePassed() > MotionDetector.getFrequency())) {
+                        if (MotionDetector.isDetectMode() && !motionDetector.isMoving() && (tts.getLastSpokeTimePassed() > MotionDetector.getFrequency())) {
                             // 정지 모드 안내 실행
                             readDetectedData(mappedRecognitions);
                         }
