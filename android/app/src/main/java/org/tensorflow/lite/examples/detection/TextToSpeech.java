@@ -7,8 +7,13 @@ import android.content.Intent;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class TextToSpeech {
     private static android.speech.tts.TextToSpeech tts;
@@ -41,9 +46,28 @@ public class TextToSpeech {
     }
 
     // Speak label and location
-    public void readLocation(String Location, String label) {
-        tts.speak(Location+"에 "+label+" 있습니다.", android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
+    public void readLocation(String location, String label) {
+        tts.speak(location+"에 "+label+" 있습니다.", android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
         // 시간 기록
+        while (tts.isSpeaking()) {}
+        lastSpokeTime = System.currentTimeMillis();
+    }
+
+    public void readLocations(LinkedHashMap<String, HashSet<String>> locationMap) {
+        String speechText = "";
+        for (String location : locationMap.keySet()) {
+            HashSet<String> labelSet = locationMap.get(location);
+            if (labelSet != null && !labelSet.isEmpty()) {
+                speechText += location + "에 ";
+                for (String label : labelSet) {
+                    speechText += label + ". ";
+                }
+            }
+        }
+        if (speechText.equals("")) return;
+
+        speechText += " 있습니다.";
+        this.readText(speechText);
         while (tts.isSpeaking()) {}
         lastSpokeTime = System.currentTimeMillis();
     }
