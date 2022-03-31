@@ -25,7 +25,7 @@ public class VoiceOption extends AppCompatActivity {
 
     //private EditText editText;
     //private TextView random, random2;
-    private Button voicefrequency,voicefrequency2,voicefast,voicelow, stopmode;
+    private Button voicefrequency,voicefrequency2,voicefast,voicelow, stopmode,reset;
     /*
     private final double border_Left=(double)1/640*212;
     private final double border_Lower=(double)1/640*212;
@@ -43,6 +43,7 @@ public class VoiceOption extends AppCompatActivity {
         voicefast = (Button) findViewById(R.id.voicefast);
         voicelow = (Button) findViewById(R.id.voicelow);
         stopmode = (Button) findViewById(R.id.stopmode);
+        reset=(Button) findViewById(R.id.reset);
 
         tts = new TextToSpeech(this);
 
@@ -51,6 +52,7 @@ public class VoiceOption extends AppCompatActivity {
             @Override
             public void onClick(View view){
                 tts.incrementFreq();
+                TestText("목소리 빈도가 늘어납니다.");
             }
         });
 
@@ -58,6 +60,7 @@ public class VoiceOption extends AppCompatActivity {
             @Override
             public void onClick(View view){
                 tts.decrementFreq();
+                TestText("목소리 빈도가 줄어듭니다.");
             }
         });
 
@@ -66,6 +69,7 @@ public class VoiceOption extends AppCompatActivity {
             public void onClick(View view){
                 // speed += 0.2;
                 tts.incrementSpeed();
+                TestText("목소리 속도가 빨라집니다.");
                 //tts.getSpeed(2.0);   //읽는 속도 2배 빠르게
                 //editText 문장 읽기
             }
@@ -75,6 +79,7 @@ public class VoiceOption extends AppCompatActivity {
             @Override
             public void onClick(View view){
                 tts.decrementSpeed();
+                TestText("목소리 속도가 느려집니다.");
             }
         });
 
@@ -92,6 +97,25 @@ public class VoiceOption extends AppCompatActivity {
                 tts.readText(output);
             }
         });
+        reset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view){
+                tts.reset();
+                TestText("기본 설정 상태로 초기화합니다.");
+
+            }
+        });
+    }
+    public void TestText(String text)
+    {
+        tts.readText(text);
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        if(tts!=null)
+            tts.stop();
     }
 
 
