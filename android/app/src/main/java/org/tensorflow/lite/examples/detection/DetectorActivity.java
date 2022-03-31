@@ -46,10 +46,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.tensorflow.lite.examples.detection.customview.OverlayView;
@@ -84,7 +87,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private Bitmap rgbFrameBitmap = null;
     private Bitmap croppedBitmap = null;
     private Bitmap cropCopyBitmap = null;
-    private VoiceOption voiceOption=new VoiceOption();
+    private VoiceOption voiceOption = new VoiceOption();
 
     private boolean computingDetection = false;
 
@@ -108,7 +111,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         super.onCreate(savedInstanceState);
 
         tts = new TextToSpeech(this);
-        motionDetector = MotionDetector.getInstance(this, tts);
+        motionDetector = MotionDetector.getInstance(this);
 
         try {
             AssetManager am = getResources().getAssets();
@@ -359,23 +362,20 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     );
 
                     /** Custom **/
-                    Log.d("isDetectmode", String.valueOf(MotionDetector.isDetectMode()));
                     if (tts != null && !tts.IsSpeaking()) {
-                        if (MotionDetector.isDetectMode() &&
-                                !motionDetector.isMoving() && (tts.getLastSpokeTimePassed() > MotionDetector.getFrequency())) {
+                        if (!motionDetector.isMoving() && (tts.getLastSpokeTimePassed() > MotionDetector.getFrequency())) {
                             // 정지 모드 안내 실행
                             readDetectedData(mappedRecognitions);
-                            tts.setLastSpokeTime(System.currentTimeMillis() + (long) MotionDetector.getFrequency());
                         }
                         else if (tts.getLastSpokeTimePassed() > TextToSpeech.getFrequency()) {
                             // 일반 안내 실행
                             readDetectedData(mappedRecognitions);
                         }
-                    }
 
-                    // 움직임 감지 및 수정(1초 간격으로 감지)
-                    if (motionDetector.getLastMovedTimePassed() > 1000) {
-                        motionDetector.setMovement(false);
+                        // 움직임 감지 및 수정(3초 간격으로 감지)
+                        if (motionDetector.getLastMovedTimePassed() > 3000) {
+                            motionDetector.setMovement(false);
+                        }
                     }
                 }
             }
@@ -415,18 +415,20 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private void readDetectedData(List<Classifier.Recognition> recognitions) {
         List<Classifier.Recognition> sortedRecognition  = getSortedDetectedDataList(recognitions);
         ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(sortedRecognition);
-        String location = null;
 
-        if (sortedRecognition != null) {
-            for (int i = 0; i < sortedRecognition.size(); i++) {
-                int labelIndex = sortedRecognition.get(i).getDetectedClass();
-                String englishLabel = labelTable.get(labelIndex);
-                String koreanLabel = koreanLabelTable.get(englishLabel);
-                location = tts.inputLocation(detectedLocations.get(i));
-                tts.readLocation(location, koreanLabel);
-            }
-            //getDelay();
+        LinkedHashMap<String, HashSet<String>> map = new LinkedHashMap<>();
+        map.put("왼쪽", new HashSet<>());
+        map.put("중앙", new HashSet<>());
+        map.put("오른쪽", new HashSet<>());
+        for (int i = 0; i < sortedRecognition.size(); i++) {
+            int labelIndex = sortedRecognition.get(i).getDetectedClass();
+            String englishLabel = labelTable.get(labelIndex);
+            String koreanLabel = koreanLabelTable.get(englishLabel);
+            String location = tts.inputLocation(detectedLocations.get(i));
+            map.get(location).add(koreanLabel);
         }
+
+        tts.readLocations(map);
     }
 
     // Get detected data according to confidence and location
