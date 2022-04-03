@@ -136,7 +136,7 @@ public class TextToSpeech {
         return Math.abs(System.currentTimeMillis() - lastSpokeTime);
     }
     public void reset() {
-        TextToSpeech.setFrequency((float)1.0);
+        TextToSpeech.setFrequency((float)20000.0);
         TextToSpeech.setSpeed((float)1.0);
     }
     public void stop(){

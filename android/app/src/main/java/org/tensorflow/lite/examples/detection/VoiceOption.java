@@ -51,16 +51,18 @@ public class VoiceOption extends AppCompatActivity {
         voicefrequency.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view){
-                tts.incrementFreq();
+                tts.decrementFreq();
                 TestText("목소리 빈도가 늘어납니다.");
+                Toast.makeText(VoiceOption.this, Float.toString(tts.getFrequency()/1000), Toast.LENGTH_SHORT).show();
             }
         });
 
         voicefrequency2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view){
-                tts.decrementFreq();
+                tts.incrementFreq();
                 TestText("목소리 빈도가 줄어듭니다.");
+                Toast.makeText(VoiceOption.this, Float.toString(tts.getFrequency()/1000), Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -68,8 +70,11 @@ public class VoiceOption extends AppCompatActivity {
             @Override
             public void onClick(View view){
                 // speed += 0.2;
-                tts.incrementSpeed();
-                TestText("목소리 속도가 빨라집니다.");
+                if(tts.getSpeed() <2.0) {
+                    tts.incrementSpeed();
+                    TestText("목소리 속도가 빨라집니다.");
+                }
+                Toast.makeText(VoiceOption.this, Float.toString(tts.getSpeed()), Toast.LENGTH_SHORT).show();
                 //tts.getSpeed(2.0);   //읽는 속도 2배 빠르게
                 //editText 문장 읽기
             }
@@ -78,8 +83,11 @@ public class VoiceOption extends AppCompatActivity {
         voicelow.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view){
-                tts.decrementSpeed();
-                TestText("목소리 속도가 느려집니다.");
+                if(tts.getSpeed() >0.0) {
+                    tts.decrementSpeed();
+                    TestText("목소리 속도가 느려집니다.");
+                }
+                Toast.makeText(VoiceOption.this, Float.toString(tts.getSpeed()), Toast.LENGTH_SHORT).show();
             }
         });
 

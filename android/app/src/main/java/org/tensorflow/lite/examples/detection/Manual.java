@@ -6,12 +6,12 @@ import android.widget.Button;
 import android.widget.ImageButton;
 
 import androidx.appcompat.app.AppCompatActivity;
-
+import androidx.appcompat.widget.AppCompatButton;
 
 
 public class Manual extends AppCompatActivity {
     private TextToSpeech tts;
-    private ImageButton play;
+    private AppCompatButton play;
 
 
     @Override
@@ -20,7 +20,7 @@ public class Manual extends AppCompatActivity {
         setContentView(R.layout.activity_manual);
 
 
-        play=(ImageButton) findViewById(R.id.play);
+        play = (AppCompatButton) findViewById(R.id.play);
 
         tts = new TextToSpeech(this);
 
@@ -57,6 +57,7 @@ public class Manual extends AppCompatActivity {
                 "\n" +
                 "세번째 버튼은 음성 설정 버튼입니다.\n" +
                 "안내하는 목소리의 빠르기와 목소리 지연시간을 조절할 수 있습니다.\n" +
+                "그리고 정지모드를 활성화할 수 있습니다."+
                 "\n" +
                 "다시듣기를 원하시면 가운데 버튼을 눌러주세요.");
     }
