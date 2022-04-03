@@ -86,8 +86,7 @@ public class VoiceOption extends AppCompatActivity {
         stopmode.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                MotionDetector motionDetector = MotionDetector.getInstance(VoiceOption.this, tts);
-                motionDetector.setDetectMode(!MotionDetector.isDetectMode());
+                MotionDetector.setDetectMode(!MotionDetector.isDetectMode());
                 String output = "";
                 if (MotionDetector.isDetectMode()) {
                     output = "정지 모드 활성";

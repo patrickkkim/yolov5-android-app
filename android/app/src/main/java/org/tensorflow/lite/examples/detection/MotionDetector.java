@@ -19,13 +19,14 @@ public class MotionDetector {
     private long lastMovedTime = System.currentTimeMillis();
     private boolean movement = true; // 정지 여부
 
-    private MotionDetector(Context context, TextToSpeech tts) {
+    private MotionDetector(Context context) {
         detectMode = false;
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-        stepSensor = (Sensor) sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        stepSensor = (Sensor) sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
         sensorEventListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
+                System.out.println("움직임 감지");
                 movement = true;
                 lastMovedTime = System.currentTimeMillis();
             }
@@ -36,9 +37,9 @@ public class MotionDetector {
         sensorManager.registerListener(sensorEventListener, stepSensor, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
-    public static MotionDetector getInstance(Context context, TextToSpeech tts) {
+    public static MotionDetector getInstance(Context context) {
         if (instance == null) {
-            instance = new MotionDetector(context, tts);
+            instance = new MotionDetector(context);
         }
         return instance;
     }
