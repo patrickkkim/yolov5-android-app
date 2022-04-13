@@ -26,7 +26,7 @@ public class TextToSpeech {
     private boolean isLoading = true;
     private long lastSpokeTime;
     private static float speed = 1;
-    private static float frequency = 20000;
+    private static float frequency = 1500;
 
     public TextToSpeech(Context context) {
         //TTS 생성후, OnInitListener로 초기화
@@ -86,15 +86,10 @@ public class TextToSpeech {
 
     // Return the location of object
     public String inputLocation(ArrayList<Double> location) {
-        ArrayList<Double> i = location;
-
-        double x_median = i.get(0);
-        double y_median = i.get(1);
-        double height = i.get(2);
-        double width = i.get(3);
-
-        System.out.println("x test:" + x_median);
-        System.out.println("y test:" + y_median);
+        double x_median = location.get(0);
+        double y_median = location.get(1);
+        double height = location.get(2);
+        double width = location.get(3);
 
 //        String Temp = String.valueOf((int) x_median);
         String Temp = "";
