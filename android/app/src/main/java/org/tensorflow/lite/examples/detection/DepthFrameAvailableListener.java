@@ -10,19 +10,22 @@ import android.media.ImageReader;
 import android.util.Log;
 
 import java.nio.ShortBuffer;
+import java.util.ArrayList;
 
 public class DepthFrameAvailableListener implements ImageReader.OnImageAvailableListener {
-    public static final int WIDTH = 240;
-    public static final int HEIGHT = 180;
+    public static final int WIDTH = TOFDetector.getPreviewWidth();
+    public static final int HEIGHT = TOFDetector.getPreviewHeight();
     public static final float MIN_CONFIDENCE = 0.1f;
     public static final float RANGE_MIN = 100.0f;
     public static final float RANGE_MAX = 1600.0f;
 
     private int[] rawDataMask;
     private TOFCameraActivity depthFrameActivity;
+    private TextToSpeech tts;
 
     public DepthFrameAvailableListener(Context activity) {
         depthFrameActivity = (TOFCameraActivity) activity;
+        tts = new TextToSpeech(depthFrameActivity);
     }
 
     @Override
@@ -32,6 +35,12 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
             if (image != null) {
                 if (image.getFormat() == ImageFormat.DEPTH16) {
                     processImage(image);
+                    ArrayList<Integer> target = new ArrayList<>();
+                    target.add(320);
+                    target.add(320);
+                    if (tts.getLastSpokeTimePassed() > TextToSpeech.getFrequency()) {
+                        tts.readText(String.valueOf(this.getTargetDistance(target)));
+                    }
                     drawRawData();
                 }
                 image.close();
@@ -97,5 +106,34 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
             Bitmap rawData = convertToRGBBitmap(rawDataMask);
             depthFrameActivity.draw(rawData);
         }
+    }
+
+    private int interpolatePoint(float ratio, int point) {
+        float result = point * ratio;
+        return (int) result;
+    }
+
+    private ArrayList<Integer> interpolateCoord(ArrayList<Integer> target, float widthRatio, float heightRatio) {
+        int x = target.get(0);
+        int y = target.get(1);
+        int newX = this.interpolatePoint(widthRatio, x);
+        int newY = this.interpolatePoint(heightRatio, y);
+        ArrayList<Integer> newCoord = new ArrayList<>();
+        newCoord.add(newX);
+        newCoord.add(newY);
+        return newCoord;
+    }
+
+    private int getTargetDistance(ArrayList<Integer> target) {
+        float widthRatio = TOFDetector.getWidthRatio();
+        float heightRatio = TOFDetector.getHeightRatio();
+        ArrayList<Integer> interpolatedCoord = this.interpolateCoord(target, widthRatio, heightRatio);
+        int distance = this.getDistance(interpolatedCoord.get(0), interpolatedCoord.get(1));
+        return distance;
+    }
+
+    public int getDistance(int x, int y) {
+        int index = y * WIDTH + x;
+        return rawDataMask[index];
     }
 }

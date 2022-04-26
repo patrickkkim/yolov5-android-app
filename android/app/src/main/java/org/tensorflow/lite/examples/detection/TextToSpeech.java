@@ -43,6 +43,7 @@ public class TextToSpeech {
 
     public void readText(String text) {
         tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
+        lastSpokeTime = System.currentTimeMillis();
     }
 
     // Speak label and location

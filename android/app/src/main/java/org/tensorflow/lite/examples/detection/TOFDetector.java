@@ -20,30 +20,30 @@ import android.view.Surface;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class TOFDetector extends CameraDevice.StateCallback {
-    private static final int PREVIEW_WIDTH = 240;
-    private static final int PREVIEW_HEIGHT = 180;
+    private static int PREVIEW_WIDTH = 0;
+    private static int PREVIEW_HEIGHT = 0;
+    private static float WIDTH_RATIO = 0;
+    private static float HEIGHT_RATIO = 0;
 
-    private static TOFDetector instance;
-    private static Context context;
-    private static CameraManager cameraManager;
+    private Context context;
+    private CameraManager cameraManager;
 
-    private static ImageReader previewReader;
-    private static DepthFrameAvailableListener imageAvailableListener;
-
-    private TOFDetector(Context con, CameraManager camMan) {
+    public TOFDetector(Context con, CameraManager camMan) {
         context = con;
         cameraManager = camMan;
     }
 
-    public static TOFDetector getInstance(Context con, CameraManager camMan) {
-        if (instance == null) {
-            instance = new TOFDetector(con, camMan);
-        }
-        return instance;
+    private void computeScreenRatio(int width, int height) {
+        float widthRatio = (float) PREVIEW_WIDTH / width;
+        float heightRatio = (float) PREVIEW_HEIGHT / height;
+        ArrayList<Float> ratioList = new ArrayList<>();
+        WIDTH_RATIO = widthRatio;
+        HEIGHT_RATIO = heightRatio;
     }
 
     public String getTOFCamera() {
@@ -63,6 +63,13 @@ public class TOFDetector extends CameraDevice.StateCallback {
                     // 센서 크기는 실제 캡쳐 화면 크기보다 클 수 있다.
                     SizeF sensorSize = chars.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
                     Log.i("TOF", "Sensor Size = " + sensorSize);
+                    if (sensorSize != null) {
+                        float width = sensorSize.getWidth();
+                        float height = sensorSize.getHeight();
+                        PREVIEW_WIDTH = (int) (width * 100);
+                        PREVIEW_HEIGHT = (int) (height * 100);
+                        this.computeScreenRatio(640, 640);
+                    }
 
                     // FOV 리사이징용 정보 출력
                     float[] focalLengths = chars.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
@@ -74,7 +81,7 @@ public class TOFDetector extends CameraDevice.StateCallback {
                     return camera;
                 }
             }
-        } catch (CameraAccessException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -98,8 +105,8 @@ public class TOFDetector extends CameraDevice.StateCallback {
 
     @Override
     public void onOpened(@NonNull CameraDevice cameraDevice) {
-        imageAvailableListener = new DepthFrameAvailableListener(context);
-        previewReader = ImageReader.newInstance(PREVIEW_WIDTH, PREVIEW_HEIGHT, ImageFormat.DEPTH16, 2);
+        DepthFrameAvailableListener imageAvailableListener = new DepthFrameAvailableListener(context);
+        ImageReader previewReader = ImageReader.newInstance(PREVIEW_WIDTH, PREVIEW_HEIGHT, ImageFormat.DEPTH16, 2);
         previewReader.setOnImageAvailableListener(imageAvailableListener, null);
         try {
             CaptureRequest.Builder previewBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
@@ -139,4 +146,17 @@ public class TOFDetector extends CameraDevice.StateCallback {
     public void onDisconnected(@NonNull CameraDevice cameraDevice) { }
     @Override
     public void onError(@NonNull CameraDevice cameraDevice, int i) { }
+
+    public static int getPreviewWidth() {
+        return PREVIEW_WIDTH;
+    }
+    public static int getPreviewHeight() {
+        return PREVIEW_HEIGHT;
+    }
+    public static float getWidthRatio() {
+        return WIDTH_RATIO;
+    }
+    public static float getHeightRatio() {
+        return HEIGHT_RATIO;
+    }
 }
