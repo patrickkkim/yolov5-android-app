@@ -22,7 +22,7 @@ public class TOFCameraActivity extends AppCompatActivity {
 
         screen = findViewById(R.id.textureView);
 
-        TOFDetector tof = new TOFDetector(this, (CameraManager) getSystemService(CAMERA_SERVICE));
+        TOFDetector tof = new TOFDetector(this, (CameraManager) getSystemService(CAMERA_SERVICE), null);
         tof.openCamera(tof.getTOFCamera());
     }
 

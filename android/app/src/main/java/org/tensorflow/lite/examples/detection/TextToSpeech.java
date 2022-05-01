@@ -4,6 +4,9 @@ import static android.util.Log.ERROR;
 
 import android.content.Context;
 import android.content.Intent;
+import android.speech.tts.UtteranceProgressListener;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -15,20 +18,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class TextToSpeech {
-    private static android.speech.tts.TextToSpeech tts;
+public class TextToSpeech extends AppCompatActivity {
+    private final android.speech.tts.TextToSpeech tts;
     private final double border_Left = 212;
     private final double border_Lower = 212;
     private final double border_Right = 426;
     private final double border_Top = 426;
 
+    private static TextToSpeech instance;
 
     private boolean isLoading = true;
     private long lastSpokeTime;
     private static float speed = 1;
     private static float frequency = 1500;
 
-    public TextToSpeech(Context context) {
+    private TextToSpeech(Context context) {
         //TTS 생성후, OnInitListener로 초기화
         tts = new android.speech.tts.TextToSpeech(context, new android.speech.tts.TextToSpeech.OnInitListener() {
             @Override
@@ -39,19 +43,56 @@ public class TextToSpeech {
                 }
             }
         });
+
+        // tts에 리스너 추가
+        UtteranceProgressListener progressListener = new UtteranceProgressListener() {
+            @Override
+            public void onStart(String s) { }
+            @Override
+            public void onError(String s) { }
+
+            // 말 끝났을 때
+            @Override
+            public void onDone(String s) {
+                new Thread() {
+                    public void run() {
+                        TextToSpeech.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                lastSpokeTime = System.currentTimeMillis(); // 시간 기록
+                            }
+                        });
+                    }
+                }.start();
+            }
+        };
+        tts.setOnUtteranceProgressListener(progressListener);
     }
 
+    // 싱글턴 객체 반환 메소드
+    public static TextToSpeech getInstance(Context context) {
+        if (instance == null) {
+            instance = new TextToSpeech(context);
+        }
+        return instance;
+    }
+
+    // 문장 읽기 메소드(말 끊기 불가능)
     public void readText(String text) {
-        tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
-        lastSpokeTime = System.currentTimeMillis();
+        if (!tts.isSpeaking()) {
+            tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
+        }
+    }
+
+    // 문장 읽기 메소드(말 끊기 가능)
+    public void readTextWithInterference(String text) {
+        // 구현
     }
 
     // Speak label and location
     public void readLocation(String location, String label) {
-        tts.speak(location+"에 "+label+" 있습니다.", android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
-        // 시간 기록
-        while (tts.isSpeaking()) {}
-        lastSpokeTime = System.currentTimeMillis();
+        String text = location+"에 "+label+" 있습니다.";
+        readText(text);
     }
 
     public void readLocations(LinkedHashMap<String, HashSet<String>> locationMap) {
@@ -68,13 +109,7 @@ public class TextToSpeech {
         if (speechText.equals("")) return;
 
         speechText += " 있습니다.";
-        this.readText(speechText);
-        while (tts.isSpeaking()) {}
-        lastSpokeTime = System.currentTimeMillis();
-    }
-
-    public void readDelay() {
-        tts.playSilence(2000, android.speech.tts.TextToSpeech.QUEUE_ADD,null);
+        readText(speechText);
     }
 
     public boolean IsSpeaking(){
@@ -116,24 +151,24 @@ public class TextToSpeech {
         isLoading = loading;
     }
 
-    public static float getSpeed(){return speed;}
-    public static void setSpeed(float speed){
+    public float getSpeed(){ return speed; }
+    public void setSpeed(float speed){
         TextToSpeech.speed = speed;
         tts.setSpeechRate(speed);
     }
     public void incrementSpeed() {
-        TextToSpeech.setSpeed(speed + (float) 0.2);
+        setSpeed(speed + (float) 0.2);
     }
     public void decrementSpeed() {
-        TextToSpeech.setSpeed(speed - (float) 0.2);
+        setSpeed(speed - (float) 0.2);
     }
 
     public long getLastSpokeTimePassed() {
         return Math.abs(System.currentTimeMillis() - lastSpokeTime);
     }
     public void reset() {
-        TextToSpeech.setFrequency((float)20000.0);
-        TextToSpeech.setSpeed((float)1.0);
+        setFrequency((float)20000.0);
+        setSpeed((float)1.0);
     }
     public void stop(){
         tts.stop();
@@ -142,14 +177,14 @@ public class TextToSpeech {
     public static float getFrequency() {
         return frequency;
     }
-    public static void setFrequency(float frequency) {
+    public void setFrequency(float frequency) {
         TextToSpeech.frequency = frequency;
     }
     public void incrementFreq() {
-        TextToSpeech.setFrequency(frequency + (float) 1000);
+        setFrequency(frequency + (float) 1000);
     }
     public void decrementFreq() {
-        TextToSpeech.setFrequency(frequency - (float) 1000);
+        setFrequency(frequency - (float) 1000);
     }
     public long getLastSpokeTime() {
         return lastSpokeTime;

@@ -26,6 +26,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.hardware.camera2.CameraManager;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -102,14 +103,15 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private final Map<Integer, String> labelTable = new HashMap<>();
     private final Map<String, String> koreanLabelTable = new HashMap<>();
     private final Map<Integer, ArrayList<Double>> avgSizeTable = new HashMap<>();
-    private TextToSpeech tts = null;
+    private TextToSpeech tts;
     private MotionDetector motionDetector;
+    private TOFDetector tofDetector;
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        tts = new TextToSpeech(this);
+        tts = TextToSpeech.getInstance(this);
         motionDetector = MotionDetector.getInstance(this);
 
         this.initLabelTable();
@@ -118,6 +120,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
+        tofDetector = new TOFDetector(this, (CameraManager) getSystemService(CAMERA_SERVICE), size);
+        tofDetector.openCamera(tofDetector.getTOFCamera());
+
         final float textSizePx =
                 TypedValue.applyDimension(
                         TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
@@ -307,6 +312,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     final List<Classifier.Recognition> mappedRecognitions =
                             new LinkedList<Classifier.Recognition>();
 
+                    /** Custom depth map **/
+                    final List<Integer> mappedDepth =
+                            new LinkedList<>();
+
                     for (final Classifier.Recognition result : results) {
                         final RectF location = result.getLocation();
                         if (location != null && result.getConfidence() >= minimumConfidence) {
@@ -316,10 +325,16 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
                             result.setLocation(location);
                             mappedRecognitions.add(result);
+
+                            /** Custom depth map **/
+                            int y = (int) location.centerY();
+                            int x = (int) location.centerX();
+                            int depth = getDetectedDepth(x, y);
+                            mappedDepth.add(depth);
                         }
                     }
 
-                    tracker.trackResults(mappedRecognitions, currTimestamp);
+                    tracker.trackResults(mappedRecognitions, mappedDepth, currTimestamp);
                     trackingOverlay.postInvalidate();
 
                     computingDetection = false;
@@ -450,25 +465,37 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             int labelIndex = sortedRecognition.get(i).getDetectedClass();
             String englishLabel = labelTable.get(labelIndex);
             String koreanLabel = koreanLabelTable.get(englishLabel);
-            String location = tts.inputLocation(detectedLocations.get(i));
-            map.get(location).add(koreanLabel);
+
+            ArrayList<Double> detectedLocation = detectedLocations.get(i);
+            double y = detectedLocation.get(0);
+            double x = detectedLocation.get(1);
+            int depth = getDetectedDepth((int) x, (int) y);
+            if (depth < 100) {
+                String location = tts.inputLocation(detectedLocation);
+                map.get(location).add(koreanLabel);
+            }
         }
 
         tts.readLocations(map);
     }
 
+    private int getDetectedDepth(int x, int y) {
+        ArrayList<Integer> target = new ArrayList<>();
+        target.add(x);
+        target.add(y);
+        return tofDetector.getTargetDistance(target);
+    }
+
     // Get detected data according to confidence and location
     private List<Classifier.Recognition> getSortedDetectedDataList(List<Classifier.Recognition> recognitions) {
-        if(recognitions.size() < 2) {
-        }
-        else {
+        if(recognitions.size() >= 2) {
             Classifier.Recognition temp;
-            for(int i=0; i< recognitions.size(); i++){
-                for(int j=0; j<(recognitions.size()-1); j++){
-                    if(recognitions.get(j).getConfidence() < recognitions.get(j+1).getConfidence()){
+            for (int i = 0; i < recognitions.size(); i++) {
+                for (int j = 0; j < (recognitions.size() - 1); j++) {
+                    if (recognitions.get(j).getConfidence() < recognitions.get(j + 1).getConfidence()) {
                         temp = recognitions.get(j);
                         recognitions.remove(j);
-                        recognitions.add(j+1, temp);
+                        recognitions.add(j + 1, temp);
                     }
                 }
             }
@@ -509,7 +536,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
             ArrayList<Double> avgSizeInfo = avgSizeTable.get(labelIndex);
             if (avgSizeInfo != null) {
-                double avgWidth = avgSizeInfo.get(0) * previewHeight;
+                double avgWidth = avgSizeInfo.get(0) * previewWidth;
                 double avgHeight = avgSizeInfo.get(1) * previewHeight;
 
                 if (width > avgWidth && height > avgHeight) {
