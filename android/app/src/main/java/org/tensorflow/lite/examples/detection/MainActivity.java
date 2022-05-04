@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         tof_connect = (Button) findViewById(R.id.button5);
 
         //TTS 생성
-        tts = new TextToSpeech(this);
+        tts = TextToSpeech.getInstance(this);
 
         if(!checkLocationServicesStatus()){
             showDialogForLocationServiceSetting();

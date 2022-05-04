@@ -14,36 +14,35 @@ import android.hardware.camera2.CaptureRequest;
 import android.media.ImageReader;
 import android.util.Log;
 import android.util.Range;
+import android.util.Size;
 import android.util.SizeF;
 import android.view.Surface;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class TOFDetector extends CameraDevice.StateCallback {
-    private static final int PREVIEW_WIDTH = 240;
-    private static final int PREVIEW_HEIGHT = 180;
+    private static int SENSOR_WIDTH = 0;
+    private static int SENSOR_HEIGHT = 0;
+    private static int SCREEN_WIDTH = 0;
+    private static int SCREEN_HEIGHT = 0;
+    private static float WIDTH_RATIO = 0;
+    private static float HEIGHT_RATIO = 0;
+    private static int[] depthMask;
 
-    private static TOFDetector instance;
-    private static Context context;
-    private static CameraManager cameraManager;
+    private Context context;
+    private CameraManager cameraManager;
+    private ImageReader previewReader;
 
-    private static ImageReader previewReader;
-    private static DepthFrameAvailableListener imageAvailableListener;
-
-    private TOFDetector(Context con, CameraManager camMan) {
+    public TOFDetector(Context con, CameraManager camMan, Size size) {
         context = con;
         cameraManager = camMan;
-    }
-
-    public static TOFDetector getInstance(Context con, CameraManager camMan) {
-        if (instance == null) {
-            instance = new TOFDetector(con, camMan);
-        }
-        return instance;
+        SCREEN_WIDTH = size.getWidth();
+        SCREEN_HEIGHT = size.getHeight();
     }
 
     public String getTOFCamera() {
@@ -63,6 +62,13 @@ public class TOFDetector extends CameraDevice.StateCallback {
                     // 센서 크기는 실제 캡쳐 화면 크기보다 클 수 있다.
                     SizeF sensorSize = chars.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
                     Log.i("TOF", "Sensor Size = " + sensorSize);
+                    if (sensorSize != null) {
+                        float width = sensorSize.getWidth();
+                        float height = sensorSize.getHeight();
+                        SENSOR_WIDTH = (int) (width * 100);
+                        SENSOR_HEIGHT = (int) (height * 100);
+                        this.computeScreenRatio();
+                    }
 
                     // FOV 리사이징용 정보 출력
                     float[] focalLengths = chars.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
@@ -74,7 +80,7 @@ public class TOFDetector extends CameraDevice.StateCallback {
                     return camera;
                 }
             }
-        } catch (CameraAccessException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -98,8 +104,8 @@ public class TOFDetector extends CameraDevice.StateCallback {
 
     @Override
     public void onOpened(@NonNull CameraDevice cameraDevice) {
-        imageAvailableListener = new DepthFrameAvailableListener(context);
-        previewReader = ImageReader.newInstance(PREVIEW_WIDTH, PREVIEW_HEIGHT, ImageFormat.DEPTH16, 2);
+        DepthFrameAvailableListener imageAvailableListener = new DepthFrameAvailableListener(context);
+        previewReader = ImageReader.newInstance(SENSOR_WIDTH, SENSOR_HEIGHT, ImageFormat.DEPTH16, 2);
         previewReader.setOnImageAvailableListener(imageAvailableListener, null);
         try {
             CaptureRequest.Builder previewBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
@@ -134,9 +140,64 @@ public class TOFDetector extends CameraDevice.StateCallback {
             e.printStackTrace();
         }
     }
-
     @Override
     public void onDisconnected(@NonNull CameraDevice cameraDevice) { }
     @Override
     public void onError(@NonNull CameraDevice cameraDevice, int i) { }
+
+
+
+    public int getTargetDistance(ArrayList<Integer> target) {
+        float widthRatio = TOFDetector.getWidthRatio();
+        float heightRatio = TOFDetector.getHeightRatio();
+        ArrayList<Integer> interpolatedCoord = this.interpolateCoord(target, widthRatio, heightRatio);
+        int distance = this.getDistance(interpolatedCoord.get(0), interpolatedCoord.get(1));
+        return distance;
+    }
+
+    private int interpolatePoint(float ratio, int point) {
+        float result = point * ratio;
+        return (int) result;
+    }
+
+    private ArrayList<Integer> interpolateCoord(ArrayList<Integer> target, float widthRatio, float heightRatio) {
+        int x = target.get(0);
+        int y = target.get(1);
+        int newX = this.interpolatePoint(widthRatio, x);
+        int newY = this.interpolatePoint(heightRatio, y);
+        ArrayList<Integer> newCoord = new ArrayList<>();
+        newCoord.add(newX);
+        newCoord.add(newY);
+        return newCoord;
+    }
+
+    private int getDistance(int x, int y) {
+        int index = y * SENSOR_WIDTH + x;
+        return depthMask[index];
+    }
+
+    private void computeScreenRatio() {
+        WIDTH_RATIO = (float) SENSOR_WIDTH / SCREEN_WIDTH;
+        HEIGHT_RATIO = (float) SENSOR_HEIGHT / SCREEN_HEIGHT;
+    }
+
+
+    public static int getSensorWidth() {
+        return SENSOR_WIDTH;
+    }
+    public static int getSensorHeight() {
+        return SENSOR_HEIGHT;
+    }
+    public static float getWidthRatio() {
+        return WIDTH_RATIO;
+    }
+    public static float getHeightRatio() {
+        return HEIGHT_RATIO;
+    }
+    public static int[] getDepthMask() {
+        return depthMask;
+    }
+    public static void setDepthMask(int[] depthMask) {
+        TOFDetector.depthMask = depthMask;
+    }
 }

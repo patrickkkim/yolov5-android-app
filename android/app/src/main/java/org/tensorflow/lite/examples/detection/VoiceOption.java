@@ -45,7 +45,7 @@ public class VoiceOption extends AppCompatActivity {
         stopmode = (Button) findViewById(R.id.stopmode);
         reset=(Button) findViewById(R.id.reset);
 
-        tts = new TextToSpeech(this);
+        tts = TextToSpeech.getInstance(this);
 
 
         voicefrequency.setOnClickListener(new View.OnClickListener() {
