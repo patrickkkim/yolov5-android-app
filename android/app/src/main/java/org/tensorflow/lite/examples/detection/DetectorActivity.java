@@ -16,6 +16,8 @@
 
 package org.tensorflow.lite.examples.detection;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -106,12 +108,21 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private MotionDetector motionDetector;
     private boolean isStopMode = false;
 
+
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         tts = new TextToSpeech(this);
         motionDetector = MotionDetector.getInstance(this);
+
+        SharedPreferences sf = getSharedPreferences("obstacle_list",MODE_PRIVATE); //obstacle key에 저장된 값이 있는지 확인. 아무값도 들어있지 않으면 ""를 반환
+        String obstacle = sf.getString("obstacle","");
+        String[] array = obstacle.split(",");
+
+
+
+
 
         try {
             AssetManager am = getResources().getAssets();
@@ -131,6 +142,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             while ((line = bf.readLine()) != null) {
                 String[] labels = line.split(",");
                 String englishLabel = labels[0];
+
                 String koreanLabel = labels[1];
                 koreanLabelTable.put(englishLabel, koreanLabel);
             }
@@ -140,6 +152,29 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             Log.d("File", "Labels file not found.");
             e.printStackTrace();
         }
+        Map<String, String> tempTable = new HashMap<>();
+        for (String key : koreanLabelTable.keySet()) {
+            String value = koreanLabelTable.get(key);
+
+            for (int i = 0; i < array.length; i++) {
+                if (value == array[i])
+                    tempTable.put(key, value);
+            }
+
+
+        }
+
+        for (String key : tempTable.keySet()) {
+            if(tempTable.get(key) != null)
+                System.out.println("@@@@@@@@@@@@@@@@@@@@@@@" + tempTable.get(key));
+            else
+                System.out.println("@@@@@@@@@@@@@@@@@@@@@@@" + tempTable.get(key));
+            //koreanLabelTable=getCheckedDataList(koreanLabelTable,array);
+            //for(String key : koreanLabelTable.keySet()){ System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@키 : " + key); }
+        }
+
+
+
     }
 
     @Override
@@ -366,10 +401,14 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         if (MotionDetector.isDetectMode() && !motionDetector.isMoving() && (tts.getLastSpokeTimePassed() > MotionDetector.getFrequency())) {
                             // 정지 모드 안내 실행
                             readDetectedData(mappedRecognitions);
+
+
+
                         }
                         else if (tts.getLastSpokeTimePassed() > TextToSpeech.getFrequency()) {
                             // 일반 안내 실행
                             readDetectedData(mappedRecognitions);
+
                         }
 
                         // 움직임 감지 및 수정(3초 간격으로 감지)
@@ -449,6 +488,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         }
         return recognitions;
     }
+
 
 
 

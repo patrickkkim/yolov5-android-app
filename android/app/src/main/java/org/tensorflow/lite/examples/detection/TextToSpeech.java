@@ -27,6 +27,7 @@ public class TextToSpeech {
     private long lastSpokeTime;
     private static float speed = 1;
     private static float frequency = 20000;
+    private static String obstacle;
 
     public TextToSpeech(Context context) {
         //TTS 생성후, OnInitListener로 초기화
@@ -142,6 +143,9 @@ public class TextToSpeech {
     public void stop(){
         tts.stop();
     }
+
+    public static String getObstacles() { return obstacle; }
+    public static void setObstacles(String Obstacle) {obstacle=Obstacle;}
 
     public static float getFrequency() {
         return frequency;
