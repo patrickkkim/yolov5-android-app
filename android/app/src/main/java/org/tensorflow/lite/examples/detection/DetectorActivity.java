@@ -154,27 +154,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         }
         Map<String, String> tempTable = new HashMap<>();
         for (String key : koreanLabelTable.keySet()) {
-            String value = koreanLabelTable.get(key);
-
             for (int i = 0; i < array.length; i++) {
-                if (value == array[i])
-                    tempTable.put(key, value);
+                if (key.equals(array[i]))
+                    tempTable.put(key, key);
             }
-
-
         }
-
-        for (String key : tempTable.keySet()) {
-            if(tempTable.get(key) != null)
-                System.out.println("@@@@@@@@@@@@@@@@@@@@@@@" + tempTable.get(key));
-            else
-                System.out.println("@@@@@@@@@@@@@@@@@@@@@@@" + tempTable.get(key));
-            //koreanLabelTable=getCheckedDataList(koreanLabelTable,array);
-            //for(String key : koreanLabelTable.keySet()){ System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@키 : " + key); }
-        }
-
-
-
     }
 
     @Override
