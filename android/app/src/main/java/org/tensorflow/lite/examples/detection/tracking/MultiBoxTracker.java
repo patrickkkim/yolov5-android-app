@@ -111,9 +111,9 @@ public class MultiBoxTracker {
     }
   }
 
-  public synchronized void trackResults(final List<Recognition> results, final long timestamp) {
+  public synchronized void trackResults(final List<Recognition> results, final List<Integer> depths, final long timestamp) {
     logger.i("Processing %d results from %d", results.size(), timestamp);
-    processResults(results);
+    processResults(results, depths);
   }
 
   private Matrix getFrameToCanvasMatrix() {
@@ -154,12 +154,13 @@ public class MultiBoxTracker {
     }
   }
 
-  private void processResults(final List<Recognition> results) {
-    final List<Pair<Float, Recognition>> rectsToTrack = new LinkedList<Pair<Float, Recognition>>();
+  private void processResults(final List<Recognition> results, final List<Integer> depths) {
+    final List<Pair<Float, Recognition>> rectsToTrack = new LinkedList<>();
 
     screenRects.clear();
     final Matrix rgbFrameToScreen = new Matrix(getFrameToCanvasMatrix());
 
+    int i = 0;
     for (final Recognition result : results) {
       if (result.getLocation() == null) {
         continue;
@@ -180,6 +181,7 @@ public class MultiBoxTracker {
       }
 
       rectsToTrack.add(new Pair<Float, Recognition>(result.getConfidence(), result));
+      i++;
     }
 
     trackedObjects.clear();

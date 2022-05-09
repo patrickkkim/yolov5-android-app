@@ -1,10 +1,14 @@
+wheelchair
 truck
 tree_trunk
-traffic_light
+table
+stroller
+stop
 scooter
 potted_plant
 pole
 person
+parking_meter
 movable_signage
 motorcycle
 kiosk
@@ -13,6 +17,10 @@ chair
 carrier
 car
 bus
+bollard
+bicycle
+bench
+barricade
 caution_zone
 bike_lane
 alley

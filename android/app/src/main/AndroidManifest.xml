@@ -34,6 +34,9 @@
             android:name=".ObstacleSelection"
             android:exported="false" />
         <activity
+            android:name=".TOFCameraActivity"
+            android:exported="false" />
+        <activity
             android:name=".Manual"
             android:exported="false" />
         <activity

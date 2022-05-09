@@ -22,7 +22,7 @@ public class Manual extends AppCompatActivity {
 
         play = (AppCompatButton) findViewById(R.id.play);
 
-        tts = new TextToSpeech(this);
+        tts = TextToSpeech.getInstance(this);
 
         ReadManual();
         play.setOnClickListener(new View.OnClickListener() {

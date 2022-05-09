@@ -12,6 +12,7 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.hardware.camera2.CameraManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.LocationManager;
@@ -28,7 +29,7 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button setting_voice,sunglass_connect,googlemap_connect,manual_connect,obstacle_connect;
+    private Button setting_voice,sunglass_connect,googlemap_connect,manual_connect, tof_connect, obstacle_connect;
 
     /* 2022-02-23 수정  */
     private TextToSpeech tts;
@@ -48,10 +49,11 @@ public class MainActivity extends AppCompatActivity {
         googlemap_connect=(Button) findViewById(R.id.button2);
         setting_voice=(Button) findViewById(R.id.button3);
         manual_connect=(Button) findViewById(R.id.button4);
-        obstacle_connect=(Button) findViewById(R.id.button5);
+        tof_connect = (Button) findViewById(R.id.button5);
+        obstacle_connect=(Button) findViewById(R.id.button6);
 
         //TTS 생성
-        tts = new TextToSpeech(this);
+        tts = TextToSpeech.getInstance(this);
 
         if(!checkLocationServicesStatus()){
             showDialogForLocationServiceSetting();
@@ -111,6 +113,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this, ObstacleSelection.class);
+            }
+        });
+              
+        tof_connect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, TOFCameraActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
             }

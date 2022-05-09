@@ -28,6 +28,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.hardware.camera2.CameraManager;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -89,7 +90,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private Bitmap rgbFrameBitmap = null;
     private Bitmap croppedBitmap = null;
     private Bitmap cropCopyBitmap = null;
-    private VoiceOption voiceOption = new VoiceOption();
 
     private boolean computingDetection = false;
 
@@ -102,57 +102,29 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     private BorderedText borderedText;
 
-    private Map<Integer, String> labelTable = new HashMap<>();
-    private Map<String, String> koreanLabelTable = new HashMap<>();
-    private TextToSpeech tts = null;
+    private final Map<Integer, String> labelTable = new HashMap<>();
+    private final Map<String, String> koreanLabelTable = new HashMap<>();
+    private final Map<Integer, ArrayList<Double>> avgSizeTable = new HashMap<>();
+    private TextToSpeech tts;
     private MotionDetector motionDetector;
-    private boolean isStopMode = false;
+    private TOFDetector tofDetector;
 
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        tts = new TextToSpeech(this);
+        tts = TextToSpeech.getInstance(this);
         motionDetector = MotionDetector.getInstance(this);
 
         SharedPreferences sf = getSharedPreferences("obstacle_list",MODE_PRIVATE); //obstacle key에 저장된 값이 있는지 확인. 아무값도 들어있지 않으면 ""를 반환
         String obstacle = sf.getString("obstacle","");
         String[] array = obstacle.split(",");
 
-
-
-
-
-        try {
-            AssetManager am = getResources().getAssets();
-            InputStream is = am.open("labels.txt");
-            BufferedReader bf = new BufferedReader(new InputStreamReader(is));
-            int index = 0;
-            String line;
-            while ((line = bf.readLine()) != null) {
-                labelTable.put(index, line);
-                index++;
-            }
-            is.close();
-            bf.close();
-
-            is = am.open("korean_labels.txt");
-            bf = new BufferedReader(new InputStreamReader(is));
-            while ((line = bf.readLine()) != null) {
-                String[] labels = line.split(",");
-                String englishLabel = labels[0];
-
-                String koreanLabel = labels[1];
-                koreanLabelTable.put(englishLabel, koreanLabel);
-            }
-            is.close();
-            bf.close();
-        } catch (Exception e) {
-            Log.d("File", "Labels file not found.");
-            e.printStackTrace();
-        }
-        Map<String, String> tempTable = new HashMap<>();
+        this.initLabelTable();
+        this.initAvgSizeTable();
+      
+      Map<String, String> tempTable = new HashMap<>();
         for (String key : koreanLabelTable.keySet()) {
             for (int i = 0; i < array.length; i++) {
                 if (key.equals(array[i]))
@@ -163,6 +135,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
+        tofDetector = new TOFDetector(this, (CameraManager) getSystemService(CAMERA_SERVICE), size);
+        tofDetector.openCamera(tofDetector.getTOFCamera());
+
         final float textSizePx =
                 TypedValue.applyDimension(
                         TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
@@ -352,6 +327,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     final List<Classifier.Recognition> mappedRecognitions =
                             new LinkedList<Classifier.Recognition>();
 
+                    /** Custom depth map **/
+                    final List<Integer> mappedDepth =
+                            new LinkedList<>();
+
                     for (final Classifier.Recognition result : results) {
                         final RectF location = result.getLocation();
                         if (location != null && result.getConfidence() >= minimumConfidence) {
@@ -361,10 +340,16 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
                             result.setLocation(location);
                             mappedRecognitions.add(result);
+
+                            /** Custom depth map **/
+                            int y = (int) location.centerY();
+                            int x = (int) location.centerX();
+                            int depth = getDetectedDepth(x, y);
+                            mappedDepth.add(depth);
                         }
                     }
 
-                    tracker.trackResults(mappedRecognitions, currTimestamp);
+                    tracker.trackResults(mappedRecognitions, mappedDepth, currTimestamp);
                     trackingOverlay.postInvalidate();
 
                     computingDetection = false;
@@ -434,9 +419,61 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
 
     /** Custom Methods **/
+    // 라벨 테이블(맵) 초기화 및 생성
+    private void initLabelTable() {
+        ArrayList<String> lineList = this.getFileLines("labels.txt");
+        int index = 0;
+        for (String line : lineList) {
+            labelTable.put(index, line);
+            index++;
+        }
+
+        lineList = this.getFileLines("korean_labels.txt");
+        for (String line : lineList) {
+            String[] labels = line.split(",");
+            String englishLabel = labels[0];
+            String koreanLabel = labels[1];
+            koreanLabelTable.put(englishLabel, koreanLabel);
+        }
+    }
+
+    // 사물 평균 크기 테이블 초기화 및 생성
+    private void initAvgSizeTable() {
+        ArrayList<String> lineList = this.getFileLines("avgsize.txt");
+        for (String line : lineList) {
+            String[] sizeInfo = line.split(" ");
+            int classIndex = Integer.parseInt(sizeInfo[0]);
+            double avgWidth = Double.parseDouble(sizeInfo[1]);
+            double avgHeight = Double.parseDouble(sizeInfo[2]);
+            avgSizeTable.put(classIndex, new ArrayList<Double>(Arrays.asList(avgWidth, avgHeight)));
+        }
+    }
+
+    // 파일을 읽고 각 줄을 String 형태로 리스트에 담아서 반환하는 메소드
+    private ArrayList<String> getFileLines(String fileName) {
+        try {
+            AssetManager am = getResources().getAssets();
+            InputStream is = am.open(fileName);
+            BufferedReader bf = new BufferedReader(new InputStreamReader(is));
+            ArrayList<String> lineList = new ArrayList<>();
+            String line;
+            while ((line = bf.readLine()) != null) {
+                lineList.add(line);
+            }
+            is.close();
+            bf.close();
+            return lineList;
+        } catch (Exception e) {
+            Log.d("File", fileName + " file not found.");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     // Speak label and location
     private void readDetectedData(List<Classifier.Recognition> recognitions) {
-        List<Classifier.Recognition> sortedRecognition  = getSortedDetectedDataList(recognitions);
+        List<Classifier.Recognition> sortedRecognition  =
+                getSortedDetectedDataList(getFilteredDetectedDataBySize(recognitions));
         ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(sortedRecognition);
 
         LinkedHashMap<String, HashSet<String>> map = new LinkedHashMap<>();
@@ -447,25 +484,37 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             int labelIndex = sortedRecognition.get(i).getDetectedClass();
             String englishLabel = labelTable.get(labelIndex);
             String koreanLabel = koreanLabelTable.get(englishLabel);
-            String location = tts.inputLocation(detectedLocations.get(i));
-            map.get(location).add(koreanLabel);
+
+            ArrayList<Double> detectedLocation = detectedLocations.get(i);
+            double y = detectedLocation.get(0);
+            double x = detectedLocation.get(1);
+            int depth = getDetectedDepth((int) x, (int) y);
+            if (depth < 100) {
+                String location = tts.inputLocation(detectedLocation);
+                map.get(location).add(koreanLabel);
+            }
         }
 
         tts.readLocations(map);
     }
 
+    private int getDetectedDepth(int x, int y) {
+        ArrayList<Integer> target = new ArrayList<>();
+        target.add(x);
+        target.add(y);
+        return tofDetector.getTargetDistance(target);
+    }
+
     // Get detected data according to confidence and location
     private List<Classifier.Recognition> getSortedDetectedDataList(List<Classifier.Recognition> recognitions) {
-        if(recognitions.size() < 2) {
-        }
-        else {
+        if(recognitions.size() >= 2) {
             Classifier.Recognition temp;
-            for(int i=0; i< recognitions.size(); i++){
-                for(int j=0; j<(recognitions.size()-1); j++){
-                    if(recognitions.get(j).getConfidence() < recognitions.get(j+1).getConfidence()){
+            for (int i = 0; i < recognitions.size(); i++) {
+                for (int j = 0; j < (recognitions.size() - 1); j++) {
+                    if (recognitions.get(j).getConfidence() < recognitions.get(j + 1).getConfidence()) {
                         temp = recognitions.get(j);
                         recognitions.remove(j);
-                        recognitions.add(j+1, temp);
+                        recognitions.add(j + 1, temp);
                     }
                 }
             }
@@ -473,18 +522,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         return recognitions;
     }
 
-
-
-
-
     private int getRandDetectedData(List<Classifier.Recognition> recognitions) {
         if (recognitions.size() == 0) { return -1; }
         int randData = ThreadLocalRandom.current().nextInt(0, recognitions.size());
         return randData;
-    }
-
-    private void getDelay() {
-        tts.readDelay();
     }
 
     private ArrayList<ArrayList<Double>> getDetectedDataLocation(List<Classifier.Recognition> recognitions) {
@@ -502,6 +543,29 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         return detectedLocations;
     }
 
+    // 평균 크기에 따른 필터링
+    private List<Classifier.Recognition> getFilteredDetectedDataBySize(List<Classifier.Recognition> recognitions) {
+        List<Classifier.Recognition> newRecognitions = new LinkedList<>(); // 새로 반환할 리스트
+        int inputSize = detector.getInputSize();
+        for (Classifier.Recognition recognition : recognitions) {
+            int labelIndex = recognition.getDetectedClass();
+            RectF rectLocation = recognition.getLocation();
+            double width = rectLocation.width();
+            double height = rectLocation.height();
 
+            ArrayList<Double> avgSizeInfo = avgSizeTable.get(labelIndex);
+            if (avgSizeInfo != null) {
+                double avgWidth = avgSizeInfo.get(0) * previewWidth;
+                double avgHeight = avgSizeInfo.get(1) * previewHeight;
 
+                if (width > avgWidth && height > avgHeight) {
+                    newRecognitions.add(recognition);
+                }
+            }
+            else { // 평균 크기 정보가 없으면 일단 그냥 반환값에 넣어둠
+                newRecognitions.add(recognition);
+            }
+        }
+        return newRecognitions;
+    }
 }
