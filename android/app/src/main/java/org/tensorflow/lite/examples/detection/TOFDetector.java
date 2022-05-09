@@ -37,6 +37,7 @@ public class TOFDetector extends CameraDevice.StateCallback {
     private Context context;
     private CameraManager cameraManager;
     private ImageReader previewReader;
+    private boolean isTOFAvailable = false;
 
     public TOFDetector(Context con, CameraManager camMan, Size size) {
         context = con;
@@ -77,6 +78,7 @@ public class TOFDetector extends CameraDevice.StateCallback {
                         double fov = 2 * Math.atan(sensorSize.getWidth() / (2 * focalLength));
                         Log.i("TOF", "Computed FOV = " + fov);
                     }
+                    isTOFAvailable = true;
                     return camera;
                 }
             }
@@ -87,6 +89,10 @@ public class TOFDetector extends CameraDevice.StateCallback {
     }
 
     public void openCamera(String cameraID) {
+        if (!isTOFAvailable) {
+            Log.e("TOF", "TOF camera not available.");
+            return;
+        }
         try {
             int permission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA);
             if (PackageManager.PERMISSION_GRANTED == permission) {
@@ -199,5 +205,11 @@ public class TOFDetector extends CameraDevice.StateCallback {
     }
     public static void setDepthMask(int[] depthMask) {
         TOFDetector.depthMask = depthMask;
+    }
+    public boolean isTOFAvailable() {
+        return isTOFAvailable;
+    }
+    public void setTOFAvailable(boolean TOFAvailable) {
+        isTOFAvailable = TOFAvailable;
     }
 }

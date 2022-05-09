@@ -18,21 +18,21 @@ public class TOFCameraActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_tofcamera);
+//        setContentView(R.layout.activity_tofcamera);
 
-        screen = findViewById(R.id.textureView);
+//        screen = findViewById(R.id.textureView);
 
         TOFDetector tof = new TOFDetector(this, (CameraManager) getSystemService(CAMERA_SERVICE), null);
         tof.openCamera(tof.getTOFCamera());
     }
 
-    public void draw(Bitmap bitmap) {
-        if (screen != null) {
-            drawBitmapOnView(bitmap, screen);
-        } else {
-            Log.e("TOF", "TextureView is not loaded.");
-        }
-    }
+//    public void draw(Bitmap bitmap) {
+//        if (screen != null) {
+//            drawBitmapOnView(bitmap, screen);
+//        } else {
+//            Log.e("TOF", "TextureView is not loaded.");
+//        }
+//    }
 
     private void drawBitmapOnView(Bitmap bitmap, TextureView textureView) {
         Canvas canvas = textureView.lockCanvas();
