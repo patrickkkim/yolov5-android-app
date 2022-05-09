@@ -502,7 +502,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         ArrayList<Integer> target = new ArrayList<>();
         target.add(x);
         target.add(y);
-        return tofDetector.getTargetDistance(target);
+        if (!tofDetector.isTOFAvailable()) return 0;
+        else return tofDetector.getTargetDistance(target);
     }
 
     // Get detected data according to confidence and location

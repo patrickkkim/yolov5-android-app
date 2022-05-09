@@ -94,7 +94,7 @@ public class DepthFrameAvailableListener implements ImageReader.OnImageAvailable
     private void drawRawData() {
         if (depthFrameActivity != null) {
             Bitmap rawData = convertToRGBBitmap(rawDataMask);
-            depthFrameActivity.draw(rawData);
+//            depthFrameActivity.draw(rawData);
         }
     }
 
