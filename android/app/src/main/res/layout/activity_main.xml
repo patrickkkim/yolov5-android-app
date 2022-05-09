@@ -7,104 +7,102 @@
     android:layout_height="match_parent"
     android:background="#778899"
     tools:context=".MainActivity">
-
-        <ScrollView
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+            <Button
+                android:id="@+id/button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginEnd="8dp"
+                android:paddingHorizontal="32dp"
+                android:paddingVertical="50dp"
+                android:backgroundTint="#FF7171"
+                android:drawableStart="@drawable/sunglass_button"
+                android:text="안내 시작"
+                android:textAlignment="center"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-                <Button
-                    android:id="@+id/button"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="22dp"
-                    android:layout_marginEnd="8dp"
-                    android:paddingHorizontal="32dp"
-                    android:paddingVertical="50dp"
-                    android:backgroundTint="#FF7171"
-                    android:drawableStart="@drawable/sunglass_button"
-                    android:text="안내 시작"
-                    android:textAlignment="center"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="40sp"
-                    android:textStyle="bold"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+            <Button
+                android:id="@+id/button2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginEnd="8dp"
+                android:paddingHorizontal="22dp"
+                android:paddingVertical="40dp"
+                android:backgroundTint="#ffb871"
+                android:drawableStart="@drawable/google_map_button"
+                android:text="내 위치"
+                android:textAlignment="center"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/button" />
 
-                <Button
-                    android:id="@+id/button2"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="22dp"
-                    android:layout_marginEnd="8dp"
-                    android:paddingHorizontal="22dp"
-                    android:paddingVertical="40dp"
-                    android:backgroundTint="#ffb871"
-                    android:drawableStart="@drawable/google_map_button"
-                    android:text="내 위치"
-                    android:textAlignment="center"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="40sp"
-                    android:textStyle="bold"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintHorizontal_bias="1.0"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/button" />
+            <Button
+                android:id="@+id/button3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginEnd="8dp"
+                android:paddingHorizontal="32dp"
+                android:paddingVertical="30dp"
+                android:backgroundTint="#ff71b8"
+                android:drawableStart="@drawable/voice_button"
+                android:text="설정"
+                android:textAlignment="center"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/button2" />
 
-                <Button
-                    android:id="@+id/button3"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="22dp"
-                    android:layout_marginEnd="8dp"
-                    android:paddingHorizontal="32dp"
-                    android:paddingVertical="30dp"
-                    android:backgroundTint="#ff71b8"
-                    android:drawableStart="@drawable/voice_button"
-                    android:text="설정"
-                    android:textAlignment="center"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="40sp"
-                    android:textStyle="bold"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintHorizontal_bias="0.0"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/button2" />
+            <Button
+                android:id="@+id/button4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginEnd="8dp"
+                android:paddingHorizontal="32dp"
+                android:paddingVertical="40dp"
+                android:backgroundTint="#008d62"
+                android:drawableStart="@drawable/manual_button"
 
-                <Button
-                    android:id="@+id/button4"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="22dp"
-                    android:layout_marginEnd="8dp"
-                    android:paddingHorizontal="32dp"
-                    android:paddingVertical="30dp"
-                    android:backgroundTint="#008d62"
-                    android:drawableStart="@drawable/manual_button"
-
-                    android:text="사용 설명서"
-                    android:textAlignment="center"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="40sp"
-                    android:textStyle="bold"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintHorizontal_bias="0.0"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/button3" />
-
-                <Button
+                android:text="사용 설명서"
+                android:textAlignment="center"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/button3" />
+          
+          <Button
                     android:id="@+id/button5"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -124,8 +122,30 @@
                     app:layout_constraintStart_toStartOf="@+id/button4"
                     app:layout_constraintTop_toBottomOf="@+id/button4" />
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-        </ScrollView>
+            <Button
+                android:id="@+id/button6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="22dp"
+                android:backgroundTint="#086A87"
+                android:drawableStart="@drawable/obstaclecheck_button"
+                android:paddingHorizontal="32dp"
+                android:paddingVertical="30dp"
+                android:text="장애물 식별"
+                android:textAlignment="center"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/button5" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

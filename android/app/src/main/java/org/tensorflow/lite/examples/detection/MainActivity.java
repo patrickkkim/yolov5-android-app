@@ -29,7 +29,7 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button setting_voice,sunglass_connect,googlemap_connect,manual_connect, tof_connect;
+    private Button setting_voice,sunglass_connect,googlemap_connect,manual_connect, tof_connect, obstacle_connect;
 
     /* 2022-02-23 수정  */
     private TextToSpeech tts;
@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
         setting_voice=(Button) findViewById(R.id.button3);
         manual_connect=(Button) findViewById(R.id.button4);
         tof_connect = (Button) findViewById(R.id.button5);
+        obstacle_connect=(Button) findViewById(R.id.button6);
 
         //TTS 생성
         tts = TextToSpeech.getInstance(this);
@@ -107,6 +108,14 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        obstacle_connect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, ObstacleSelection.class);
+            }
+        });
+              
         tof_connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
