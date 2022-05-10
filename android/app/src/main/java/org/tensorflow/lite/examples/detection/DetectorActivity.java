@@ -16,6 +16,8 @@
 
 package org.tensorflow.lite.examples.detection;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -107,6 +109,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private MotionDetector motionDetector;
     private TOFDetector tofDetector;
 
+
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,8 +117,20 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         tts = TextToSpeech.getInstance(this);
         motionDetector = MotionDetector.getInstance(this);
 
+        SharedPreferences sf = getSharedPreferences("obstacle_list",MODE_PRIVATE); //obstacle key에 저장된 값이 있는지 확인. 아무값도 들어있지 않으면 ""를 반환
+        String obstacle = sf.getString("obstacle","");
+        String[] array = obstacle.split(",");
+
         this.initLabelTable();
         this.initAvgSizeTable();
+      
+      Map<String, String> tempTable = new HashMap<>();
+        for (String key : koreanLabelTable.keySet()) {
+            for (int i = 0; i < array.length; i++) {
+                if (key.equals(array[i]))
+                    tempTable.put(key, key);
+            }
+        }
     }
 
     @Override
@@ -355,10 +370,14 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         if (MotionDetector.isDetectMode() && !motionDetector.isMoving() && (tts.getLastSpokeTimePassed() > MotionDetector.getFrequency())) {
                             // 정지 모드 안내 실행
                             readDetectedData(mappedRecognitions);
+
+
+
                         }
                         else if (tts.getLastSpokeTimePassed() > TextToSpeech.getFrequency()) {
                             // 일반 안내 실행
                             readDetectedData(mappedRecognitions);
+
                         }
 
                         // 움직임 감지 및 수정(3초 간격으로 감지)
@@ -483,7 +502,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         ArrayList<Integer> target = new ArrayList<>();
         target.add(x);
         target.add(y);
-        return tofDetector.getTargetDistance(target);
+        if (!tofDetector.isTOFAvailable()) return 0;
+        else return tofDetector.getTargetDistance(target);
     }
 
     // Get detected data according to confidence and location

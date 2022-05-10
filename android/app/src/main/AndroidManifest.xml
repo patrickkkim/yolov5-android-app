@@ -35,6 +35,9 @@
             android:name=".BluetoothExampleActivity"
             android:exported="false" />
         <activity
+            android:name=".ObstacleSelection"
+            android:exported="false" />
+        <activity
             android:name=".TOFCameraActivity"
             android:exported="false" />
         <activity
