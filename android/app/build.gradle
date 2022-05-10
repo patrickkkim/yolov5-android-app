@@ -30,6 +30,7 @@ android {
     lint {
         abortOnError false
     }
+    namespace 'org.tensorflow.lite.examples.detection'
 }
 
 // import DownloadModels task
