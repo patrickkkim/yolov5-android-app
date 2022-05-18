@@ -29,7 +29,7 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button setting_voice,sunglass_connect,googlemap_connect,manual_connect, tof_connect, obstacle_connect;
+    private Button setting_voice,sunglass_connect,googlemap_connect,manual_connect, bluetooth_connect, tof_connect, obstacle_connect;
 
     /* 2022-02-23 수정  */
     private TextToSpeech tts;
@@ -49,8 +49,9 @@ public class MainActivity extends AppCompatActivity {
         googlemap_connect=(Button) findViewById(R.id.button2);
         setting_voice=(Button) findViewById(R.id.button3);
         manual_connect=(Button) findViewById(R.id.button4);
-        tof_connect = (Button) findViewById(R.id.button5);
-        obstacle_connect=(Button) findViewById(R.id.button6);
+        bluetooth_connect = (Button) findViewById(R.id.buttonBluetooth);
+//        tof_connect = (Button) findViewById(R.id.button5);
+//        obstacle_connect=(Button) findViewById(R.id.button6);
 
         //TTS 생성
         tts = TextToSpeech.getInstance(this);
@@ -109,23 +110,32 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        obstacle_connect.setOnClickListener(new View.OnClickListener() {
+        bluetooth_connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, ObstacleSelection.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                Intent intent = new Intent(MainActivity.this, BluetoothExampleActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
             }
         });
+
+//        obstacle_connect.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(MainActivity.this, ObstacleSelection.class);
+//                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//                startActivity(intent);
+//            }
+//        });
               
-        tof_connect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, TOFCameraActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-            }
-        });
+//        tof_connect.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(MainActivity.this, TOFCameraActivity.class);
+//                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//                startActivity(intent);
+//            }
+//        });
     }
 
     // ActivityCompat.requestPermissions를 사용한 퍼미션 요청의 결과를 리턴받는 메소드
