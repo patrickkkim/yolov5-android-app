@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
         manual_connect=(Button) findViewById(R.id.button4);
         bluetooth_connect = (Button) findViewById(R.id.buttonBluetooth);
 //        tof_connect = (Button) findViewById(R.id.button5);
-//        obstacle_connect=(Button) findViewById(R.id.button6);
+        obstacle_connect=(Button) findViewById(R.id.button6);
 
         //TTS 생성
         tts = TextToSpeech.getInstance(this);
@@ -119,14 +119,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//        obstacle_connect.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Intent intent = new Intent(MainActivity.this, ObstacleSelection.class);
-//                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//                startActivity(intent);
-//            }
-//        });
+        obstacle_connect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, ObstacleSelection.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            }
+        });
               
 //        tof_connect.setOnClickListener(new View.OnClickListener() {
 //            @Override
