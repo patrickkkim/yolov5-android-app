@@ -20,6 +20,7 @@
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BODY_SENSORS" />
 
     <application
         android:allowBackup="false"
@@ -31,6 +32,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.ObjectDetection">
+        <activity
+            android:name=".DirectionActivity"
+            android:exported="false" />
         <activity
             android:name=".BluetoothExampleActivity"
             android:exported="false" />
@@ -54,6 +58,9 @@
             android:exported="false"
             android:label="@string/tfe_od_app_name"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".DirectionActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
