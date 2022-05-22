@@ -32,6 +32,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.ObjectDetection">
+
+        <activity
+            android:name=".DirectionDitector"
+            android:exported="false" />
         <activity
             android:name=".DirectionActivity"
             android:exported="false" />
@@ -58,9 +62,6 @@
             android:exported="false"
             android:label="@string/tfe_od_app_name"
             android:screenOrientation="portrait" />
-        <activity
-            android:name=".DirectionActivity"
-            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
