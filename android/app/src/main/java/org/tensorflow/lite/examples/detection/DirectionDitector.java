@@ -41,7 +41,7 @@ public class DirectionDitector extends Application {
                     }
                     else{
                         prevDirectionL = currentDirectionL;
-                        currentDirectionL = (int)Math.floor(sensorEvent.values[0]);
+                        currentDirectionL = (int)Math.floor(sensorEvent.values[2]);
                         if(Math.abs(currentDirectionL - prevDirectionL) > 5 && Math.abs(currentDirectionL - prevDirectionL) <10) tts.readBreakAway();
                     }
                     Log.d("currentDirection : ", String.valueOf(prevDirectionL)+"///"+ String.valueOf(currentDirectionL));
