@@ -29,7 +29,7 @@ public class BluetoothExampleActivity extends AppCompatActivity {
     private BluetoothAdapter adapter;
     private Set<BluetoothDevice> pairedDevices;
     private ConnectedThread btt = null;
-    private static final String MAC = "98:DA:60:03:AC:48";
+    private static final String MAC = "B8:27:EB:51:A9:2C";
     private static final UUID DEVICE_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
 
     private TextView response;
@@ -108,7 +108,8 @@ public class BluetoothExampleActivity extends AppCompatActivity {
             public void handleMessage(Message msg) {
                 if(msg.what == ConnectedThread.RESPONSE_MESSAGE){
                     String txt = (String) msg.obj;
-                    if(response.getText().toString().length() >= 100){
+                    if (txt.length() > 100) { txt = txt.substring(0, 100); }
+                    if(response.getText().toString().length() >= 500){
                         response.setText("");
                         response.append(txt);
                     }else{
