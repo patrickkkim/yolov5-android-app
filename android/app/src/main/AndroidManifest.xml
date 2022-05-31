@@ -34,7 +34,7 @@
         android:theme="@style/AppTheme.ObjectDetection">
 
         <activity
-            android:name=".DirectionDitector"
+            android:name=".DirectionDetector"
             android:exported="false" />
         <activity
             android:name=".DirectionActivity"

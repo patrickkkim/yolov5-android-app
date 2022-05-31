@@ -113,7 +113,7 @@ public class TextToSpeech extends AppCompatActivity {
     }
 
     public void readBreakAway() {
-        readText("방향이 어긋났습니다");
+        readText("직진하세요");
     }
 
     public boolean IsSpeaking(){
