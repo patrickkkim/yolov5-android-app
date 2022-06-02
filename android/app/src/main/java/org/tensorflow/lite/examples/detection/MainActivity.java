@@ -1,7 +1,5 @@
 package org.tensorflow.lite.examples.detection;
 
-import static android.util.Log.ERROR;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,7 +10,6 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.hardware.camera2.CameraManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.LocationManager;
@@ -20,7 +17,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -29,7 +25,7 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button setting_voice,sunglass_connect,googlemap_connect,manual_connect, tof_connect, obstacle_connect;
+    private Button setting_voice,sunglass_connect,googlemap_connect,manual_connect, bluetooth_connect, tof_connect, obstacle_connect, rotation_connect, p2p_connect;
 
     /* 2022-02-23 수정  */
     private TextToSpeech tts;
@@ -49,8 +45,11 @@ public class MainActivity extends AppCompatActivity {
         googlemap_connect=(Button) findViewById(R.id.button2);
         setting_voice=(Button) findViewById(R.id.button3);
         manual_connect=(Button) findViewById(R.id.button4);
-        tof_connect = (Button) findViewById(R.id.button5);
+        bluetooth_connect = (Button) findViewById(R.id.buttonBluetooth);
+//        tof_connect = (Button) findViewById(R.id.button5);
         obstacle_connect=(Button) findViewById(R.id.button6);
+        rotation_connect=(Button) findViewById(R.id.button7);
+        p2p_connect=(Button) findViewById(R.id.button8);
 
         //TTS 생성
         tts = TextToSpeech.getInstance(this);
@@ -109,6 +108,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        bluetooth_connect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, BluetoothExampleActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+            }
+        });
+
         obstacle_connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -117,15 +125,33 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-              
-        tof_connect.setOnClickListener(new View.OnClickListener() {
+
+        rotation_connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, TOFCameraActivity.class);
+                Intent intent = new Intent(MainActivity.this, DirectionActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
             }
         });
+
+        p2p_connect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, P2PActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            }
+        });
+              
+//        tof_connect.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(MainActivity.this, TOFCameraActivity.class);
+//                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//                startActivity(intent);
+//            }
+//        });
     }
 
     // ActivityCompat.requestPermissions를 사용한 퍼미션 요청의 결과를 리턴받는 메소드

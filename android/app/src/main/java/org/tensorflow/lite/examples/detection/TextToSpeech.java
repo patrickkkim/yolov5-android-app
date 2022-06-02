@@ -188,8 +188,7 @@ public class TextToSpeech extends AppCompatActivity {
         //tts.readText("장애물과 너무 가깝습니다.");
 
     }
-
-
+  
     public boolean IsSpeaking(){
         return tts.isSpeaking();
     }
