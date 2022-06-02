@@ -56,6 +56,9 @@
             android:name=".P2PActivity"
             android:exported="false" />
         <activity
+            android:name=".DirectionDetector"
+            android:exported="false" />
+        <activity
             android:name=".DirectionActivity"
             android:exported="false" />
         <activity
@@ -81,9 +84,6 @@
             android:exported="false"
             android:label="@string/tfe_od_app_name"
             android:screenOrientation="portrait" />
-        <activity
-            android:name=".DirectionActivity"
-            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">

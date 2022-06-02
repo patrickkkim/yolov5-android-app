@@ -112,6 +112,10 @@ public class TextToSpeech extends AppCompatActivity {
         readText(speechText);
     }
 
+    public void readBreakAway() {
+        readText("직진하세요");
+    }
+
     public boolean IsSpeaking(){
         return tts.isSpeaking();
     }
