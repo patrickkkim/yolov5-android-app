@@ -48,11 +48,6 @@ public class ConnectedThread extends Thread{
         while (mSocket != null) {
             try {
                 String response = br.readLine();
-                if (response.length() > 100) {
-                    Log.d("ResponseText", response.substring(0, 100));
-                } else {
-                    Log.d("ResponseText", response);
-                }
                 Message msg = new Message();
                 msg.what = RESPONSE_MESSAGE;
                 msg.obj = response;

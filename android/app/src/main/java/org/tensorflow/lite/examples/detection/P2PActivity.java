@@ -75,16 +75,18 @@ public class P2PActivity extends AppCompatActivity {
                     manager.requestConnectionInfo(channel, connectionInfoListener);
                 } else {
                     manager.requestGroupInfo(channel, group -> {
-                        String groupPassword = group.getPassphrase();
-                        Log.i("Wifi Direct", "Password: " + groupPassword);
+                        if (group != null) {
+                            String groupPassword = group.getPassphrase();
+                            Log.i("Wifi Direct", "Password: " + groupPassword);
+                        } else {
+                            Log.e("Wifi Direct", "No groups found");
+                        }
                     });
                 }
             } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
                 // If device details has changed?
             }
         }
-
-
     }
 
     @Override

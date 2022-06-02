@@ -22,6 +22,9 @@ import android.widget.Toast;
 import org.w3c.dom.Text;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,6 +38,8 @@ public class BluetoothExampleActivity extends AppCompatActivity {
     private TextView response;
     private Button btn_connect, btn_stop;
 
+    private TextToSpeech tts;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +47,8 @@ public class BluetoothExampleActivity extends AppCompatActivity {
         response = (TextView) findViewById(R.id.textViewResult);
         btn_connect = (Button) findViewById(R.id.buttonBluetoothConnect);
         btn_stop = (Button) findViewById(R.id.buttonBluetoothStop);
+
+        tts = TextToSpeech.getInstance(this);
 
         btn_connect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -108,11 +115,12 @@ public class BluetoothExampleActivity extends AppCompatActivity {
             public void handleMessage(Message msg) {
                 if(msg.what == ConnectedThread.RESPONSE_MESSAGE){
                     String txt = (String) msg.obj;
-                    if (txt.length() > 100) { txt = txt.substring(0, 100); }
-                    if(response.getText().toString().length() >= 500){
+//                    if (txt.length() > 100) { txt = txt.substring(0, 100); }
+                    processScanData(txt);
+                    if(response.getText().toString().length() >= 100){
                         response.setText("");
                         response.append(txt);
-                    }else{
+                    } else {
                         response.append("\n" + txt);
                     }
                 }
@@ -121,5 +129,28 @@ public class BluetoothExampleActivity extends AppCompatActivity {
 
         btt = new ConnectedThread(mSocket, mHandler);
         btt.start();
+    }
+
+    private void processScanData(String dataStr) {
+        List<String> dataList = new ArrayList<>();
+
+        if (dataStr.charAt(0) == '[') {
+            dataStr = dataStr.substring(1, dataStr.length() - 1);
+            dataList = Arrays.asList(dataStr.split(", "));
+
+            float minDistance = 99f;
+            for (String data : dataList) {
+                if (data.equals("inf")) { continue; }
+                float distance = Float.parseFloat(data);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                }
+            }
+//            Log.d("Bluetooth Scan Data", String.valueOf(dataList.size()));
+            tts.readText(String.format("%.2f", minDistance));
+        }
+
+        // 223.39 pixels width
+        // Log.d("Bluetooth Data", String.valueOf(dataList.size()));
     }
 }
