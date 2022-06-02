@@ -30,6 +30,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.hardware.camera2.CameraManager;
 import android.media.ImageReader.OnImageAvailableListener;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
@@ -101,9 +102,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private MultiBoxTracker tracker;
 
     private BorderedText borderedText;
+    MediaPlayer player;
+
 
     private final Map<Integer, String> labelTable = new HashMap<>();
     private final Map<String, String> koreanLabelTable = new HashMap<>();
+    private final Map<String, String> tempTable = new HashMap<>();
     private final Map<Integer, ArrayList<Double>> avgSizeTable = new HashMap<>();
     private TextToSpeech tts;
     private MotionDetector motionDetector;
@@ -117,20 +121,13 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         tts = TextToSpeech.getInstance(this);
         motionDetector = MotionDetector.getInstance(this);
 
-        SharedPreferences sf = getSharedPreferences("obstacle_list",MODE_PRIVATE); //obstacle key에 저장된 값이 있는지 확인. 아무값도 들어있지 않으면 ""를 반환
-        String obstacle = sf.getString("obstacle","");
-        String[] array = obstacle.split(",");
+
+
 
         this.initLabelTable();
         this.initAvgSizeTable();
-      
-      Map<String, String> tempTable = new HashMap<>();
-        for (String key : koreanLabelTable.keySet()) {
-            for (int i = 0; i < array.length; i++) {
-                if (key.equals(array[i]))
-                    tempTable.put(key, key);
-            }
-        }
+        this.recObsTable();
+
     }
 
     @Override
@@ -448,6 +445,35 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             avgSizeTable.put(classIndex, new ArrayList<Double>(Arrays.asList(avgWidth, avgHeight)));
         }
     }
+    // 장애물 체크된 테이블 초기화 및 생성
+    private void recObsTable(){
+        SharedPreferences sf = getSharedPreferences("obstacle_list",MODE_PRIVATE); //obstacle key에 저장된 값이 있는지 확인. 아무값도 들어있지 않으면 ""를 반환
+        String obstacle = sf.getString("obstacle","");
+        String[] array = obstacle.split(",");
+
+        //장애물 체크를 하지 않았을경우 전체 장애물 식별
+        if(obstacle =="")
+        {
+            for (String key : koreanLabelTable.keySet()) {
+                String value=koreanLabelTable.get(key);
+                for (int i = 0; i < koreanLabelTable.size(); i++) {
+                    tempTable.put(key, value);
+                }
+            }
+        }
+        else {
+
+            for (String key : koreanLabelTable.keySet()) {
+                String value = koreanLabelTable.get(key);
+                for (int i = 0; i < array.length; i++) {
+                    if (value.equals(array[i]))
+                        tempTable.put(key, value);
+                }
+            }
+        }
+
+
+    }
 
     // 파일을 읽고 각 줄을 String 형태로 리스트에 담아서 반환하는 메소드
     private ArrayList<String> getFileLines(String fileName) {
@@ -483,21 +509,38 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         for (int i = 0; i < sortedRecognition.size(); i++) {
             int labelIndex = sortedRecognition.get(i).getDetectedClass();
             String englishLabel = labelTable.get(labelIndex);
-            String koreanLabel = koreanLabelTable.get(englishLabel);
 
-            ArrayList<Double> detectedLocation = detectedLocations.get(i);
-            double y = detectedLocation.get(0);
-            double x = detectedLocation.get(1);
-            int depth = getDetectedDepth((int) x, (int) y);
-            if (depth < 100) {
+            if(tempTable.containsKey(englishLabel))
+            {
+
+                String koreanLabel = koreanLabelTable.get(englishLabel);
+
+                ArrayList<Double> detectedLocation = detectedLocations.get(i);
+                Log.d("detectedLocation", detectedLocation.get(i) + " file not found.");
+
+                double y = detectedLocation.get(0);
+                double x = detectedLocation.get(1);
+                int depth = getDetectedDepth((int) x, (int) y);
+
                 String location = tts.inputLocation(detectedLocation);
-                map.get(location).add(koreanLabel);
+
+                if (depth < 10) {
+                    tts.stop();
+                    tts.makeBeep();
+                }
+                tts = TextToSpeech.getInstance(this);
+                map.get(location).add(koreanLabel); //해당 위치의 hashmap 장소 추가
+
+                    //Log.d("depthFile", depth + " file not found.");
+
+                }
             }
-        }
+
 
         tts.readLocations(map);
     }
 
+    //private void
     private int getDetectedDepth(int x, int y) {
         ArrayList<Integer> target = new ArrayList<>();
         target.add(x);
@@ -544,6 +587,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         return detectedLocations;
     }
 
+
+
     // 평균 크기에 따른 필터링
     private List<Classifier.Recognition> getFilteredDetectedDataBySize(List<Classifier.Recognition> recognitions) {
         List<Classifier.Recognition> newRecognitions = new LinkedList<>(); // 새로 반환할 리스트
@@ -568,5 +613,19 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             }
         }
         return newRecognitions;
+    }
+
+    @Override
+
+    public void onDestroy() {
+
+        if (tts != null) {
+
+            tts.stop();
+
+        }
+
+        super.onDestroy();
+
     }
 }

@@ -6,6 +6,10 @@ import static android.util.Log.ERROR;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.media.MediaPlayer;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -32,7 +36,7 @@ public class VoiceOption extends AppCompatActivity {
     private final double border_Right=(double)1/640*426;
     private final double border_Top=(double)1/640*426; */
 
-
+    MediaPlayer player;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +50,9 @@ public class VoiceOption extends AppCompatActivity {
         reset=(Button) findViewById(R.id.reset);
 
         tts = TextToSpeech.getInstance(this);
+
+
+
 
 
         voicefrequency.setOnClickListener(new View.OnClickListener() {
@@ -108,8 +115,10 @@ public class VoiceOption extends AppCompatActivity {
         reset.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view){
+
+
                 tts.reset();
-                TestText("기본 설정 상태로 초기화합니다.");
+                //tts.readTextWithInterference("d");
 
             }
         });
@@ -119,11 +128,16 @@ public class VoiceOption extends AppCompatActivity {
         tts.readText(text);
     }
 
+    public void beef(){
+
+    }
+
     @Override
     protected void onDestroy(){
         super.onDestroy();
         if(tts!=null)
             tts.stop();
+
     }
 
 

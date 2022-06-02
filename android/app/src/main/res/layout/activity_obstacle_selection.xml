@@ -51,7 +51,7 @@
                     android:layout_height="match_parent"
                     android:layout_gravity="left"
                     android:layout_weight="1"
-                    android:text="전체 선택"
+                    android:text="초기화"
                     android:backgroundTint="#086A87"
                     android:textColor="@color/white"
                     android:textSize="24sp"

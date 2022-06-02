@@ -4,7 +4,12 @@ import static android.util.Log.ERROR;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaPlayer;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.speech.tts.UtteranceProgressListener;
+import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -19,21 +24,28 @@ import java.util.Locale;
 import java.util.Map;
 
 public class TextToSpeech extends AppCompatActivity {
-    private final android.speech.tts.TextToSpeech tts;
+    private android.speech.tts.TextToSpeech tts;
     private final double border_Left = 212;
     private final double border_Lower = 212;
     private final double border_Right = 426;
     private final double border_Top = 426;
 
+    private int standbyIndex = 0;
+    private int lastPlayIndex = 0;
+
     private static TextToSpeech instance;
 
+    MediaPlayer player;
     private boolean isLoading = true;
     private long lastSpokeTime;
     private static float speed = 1;
     private static float frequency = 1500;
 
+    private Context context;
+
     private TextToSpeech(Context context) {
         //TTS 생성후, OnInitListener로 초기화
+        this.context = context;
         tts = new android.speech.tts.TextToSpeech(context, new android.speech.tts.TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int i) {
@@ -47,28 +59,48 @@ public class TextToSpeech extends AppCompatActivity {
         // tts에 리스너 추가
         UtteranceProgressListener progressListener = new UtteranceProgressListener() {
             @Override
-            public void onStart(String s) { }
+            public void onStart(String s) {
+                if(player.isPlaying())
+                {
+
+                }
+            }
             @Override
             public void onError(String s) { }
+
 
             // 말 끝났을 때
             @Override
             public void onDone(String s) {
-                new Thread() {
+                new Thread() { //말 끝날때마다 쓰레드 생성함(충돌이 있어서, 비동기적 구현)
                     public void run() {
                         TextToSpeech.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 lastSpokeTime = System.currentTimeMillis(); // 시간 기록
+
+
                             }
                         });
                     }
                 }.start();
+                //clearAll();
+            }
+            @Override
+            public void onRangeStart(String utteranceId, int start, int end, int frame) {
+                lastPlayIndex = start;
             }
         };
         tts.setOnUtteranceProgressListener(progressListener);
     }
 
+    //while()
+    //{
+        //tts를 index로 읽다가
+        //중간에 beef음이 들어오면 중단
+        //라스트 인덱스부터 읽기
+
+    //}
     // 싱글턴 객체 반환 메소드
     public static TextToSpeech getInstance(Context context) {
         if (instance == null) {
@@ -86,20 +118,49 @@ public class TextToSpeech extends AppCompatActivity {
 
     // 문장 읽기 메소드(말 끊기 가능)
     public void readTextWithInterference(String text) {
-        // 구현
+
+//        String test1="안녕";
+//        String test3="하세요";
+//        String test="";
+//        if(true)
+//        {
+//            tts.speak(test1, android.speech.tts.TextToSpeech.QUEUE_ADD, null, test1);
+//
+//
+//            if(tts.isSpeaking()) {
+//                long lastSpokeTime=System.currentTimeMillis();
+//                long IterateTime=2000;
+//                while(System.currentTimeMillis()-lastSpokeTime<IterateTime){}
+//                tts.stop();
+//
+//                makeBeep();
+//            }
+//            tts.speak(test3, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, test3);
+//        }
+//        else {
+//            String test2 = ".";
+//            test=test1+test2+test3;
+//        }
+//
+//
+//        tts.speak(test, android.speech.tts.TextToSpeech.QUEUE_ADD, null, test);
+
+        //tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
+
     }
 
     // Speak label and location
     public void readLocation(String location, String label) {
         String text = location+"에 "+label+" 있습니다.";
-        readText(text);
+        readTextWithInterference(text);
+
     }
 
     public void readLocations(LinkedHashMap<String, HashSet<String>> locationMap) {
         String speechText = "";
         for (String location : locationMap.keySet()) {
-            HashSet<String> labelSet = locationMap.get(location);
-            if (labelSet != null && !labelSet.isEmpty()) {
+            HashSet<String> labelSet = locationMap.get(location); //(왼쪽,중앙,오른쪽) 중의 장소 hashmap 저장
+            if (labelSet != null && !labelSet.isEmpty()) { //위치의 value값이 비지 않은 값만 저장
                 speechText += location + "에 ";
                 for (String label : labelSet) {
                     speechText += label + ". ";
@@ -112,9 +173,27 @@ public class TextToSpeech extends AppCompatActivity {
         readText(speechText);
     }
 
+    public void makeBeep(){
+        player=MediaPlayer.create(context,R.raw.beep_1);
+        if(player==null){
+            Log.d("@@MediaPlayer", "MediaPlayer is null");
+        }
+        player.setLooping(true);
+        long lastSpokeTime=System.currentTimeMillis();
+        long IterateTime=1000;
+        while(System.currentTimeMillis()-lastSpokeTime<IterateTime) {
+            player.start();
+        }
+        player.stop();
+        //tts.readText("장애물과 너무 가깝습니다.");
+
+    }
+
+
     public boolean IsSpeaking(){
         return tts.isSpeaking();
     }
+
 
     public void readGPs(String text){
         tts.speak("현재 위치는"+ text +"입니다.", android.speech.tts.TextToSpeech.QUEUE_FLUSH, null);
