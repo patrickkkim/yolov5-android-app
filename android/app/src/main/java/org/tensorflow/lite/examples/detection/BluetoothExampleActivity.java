@@ -115,7 +115,7 @@ public class BluetoothExampleActivity extends AppCompatActivity {
             public void handleMessage(Message msg) {
                 if(msg.what == ConnectedThread.RESPONSE_MESSAGE){
                     String txt = (String) msg.obj;
-//                    if (txt.length() > 100) { txt = txt.substring(0, 100); }
+                  
                     processScanData(txt);
                     if(response.getText().toString().length() >= 100){
                         response.setText("");
@@ -139,15 +139,33 @@ public class BluetoothExampleActivity extends AppCompatActivity {
             dataList = Arrays.asList(dataStr.split(", "));
 
             float minDistance = 99f;
+            int minIndex = 0;
+            int i = 0;
             for (String data : dataList) {
                 if (data.equals("inf")) { continue; }
                 float distance = Float.parseFloat(data);
                 if (distance < minDistance) {
                     minDistance = distance;
+                    minIndex = i;
                 }
+                i++;
             }
-//            Log.d("Bluetooth Scan Data", String.valueOf(dataList.size()));
-            tts.readText(String.format("%.2f", minDistance));
+
+            int left, mid, length;
+            length = dataList.size();
+            left = length / 3;
+            mid = left * 2;
+
+            String direction;
+            if (minIndex <= left) {
+                direction = "왼쪽";
+            } else if (minIndex > left && minIndex <= mid) {
+                direction = "중앙";
+            } else {
+                direction = "오른쪽";
+            }
+
+            tts.readText(direction + " " + String.format("%.2f", minDistance));
         }
 
         // 223.39 pixels width

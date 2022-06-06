@@ -40,6 +40,8 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -114,6 +116,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private MotionDetector motionDetector;
     private TOFDetector tofDetector;
 
+    // 틀어짐 확인
+    private DirectionDetector directionDetector;
+
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
@@ -121,6 +126,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         tts = TextToSpeech.getInstance(this);
         motionDetector = MotionDetector.getInstance(this);
+        directionDetector = DirectionDetector.getInstance(this);
 
 
 
@@ -372,8 +378,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                             // *--정지 모드 안내 실행
                             readDetectedData(mappedRecognitions);
 
-
-
                         }
                         else if (tts.getLastSpokeTimePassed() > TextToSpeech.getFrequency()) {
                             // 일반 안내 실행
@@ -385,10 +389,17 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         if (motionDetector.getLastMovedTimePassed() > 3000) {
                             motionDetector.setMovement(false);
                         }
+
                     }
                 }
             }
         );
+    }
+
+    @Override
+    public synchronized void onPause() {
+        super.onPause();
+        directionDetector.stopDirectionDetect();
     }
 
     @Override
@@ -591,6 +602,22 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         }
         return recognitions;
     }
+
+    // 가장 가까운 사물 검출 후 알림
+    private void alertClosestObj(List<Classifier.Recognition> recognitions) {
+        if(recognitions.size() > 0){
+            Classifier.Recognition closestObj = recognitions.get(0);
+            if(recognitions.size() > 1) {
+                for(Classifier.Recognition current : recognitions) {
+                    if(closestObj.getLocation().centerY() - (closestObj.getLocation().height()/2) > current.getLocation().centerY() - (current.getLocation().height()/2)) closestObj = current;
+                }
+            }
+            String englishLabel = labelTable.get(closestObj.getDetectedClass());
+            String koreanLabel = koreanLabelTable.get(englishLabel);
+            tts.readTextWithInterference("전방에 " + koreanLabel + "있습니다");
+        }
+    }
+
 
     private int getRandDetectedData(List<Classifier.Recognition> recognitions) {
         if (recognitions.size() == 0) { return -1; }

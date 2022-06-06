@@ -33,6 +33,8 @@ public class TextToSpeech extends AppCompatActivity {
 
     private int standbyIndex = 0;
     private int lastPlayIndex = 0;
+    private static UtteranceProgressListener progressListener;
+    private static boolean isRunning = false;
 
     private static TextToSpeech instance;
 
@@ -58,7 +60,7 @@ public class TextToSpeech extends AppCompatActivity {
         });
 
         // tts에 리스너 추가
-        UtteranceProgressListener progressListener = new UtteranceProgressListener() {
+        progressListener = new UtteranceProgressListener() {
             @Override
             public void onStart(String s) {
                 if(player.isPlaying())
@@ -119,35 +121,8 @@ public class TextToSpeech extends AppCompatActivity {
 
     // 문장 읽기 메소드(말 끊기 가능)
     public void readTextWithInterference(String text) {
-
-//        String test1="안녕";
-//        String test3="하세요";
-//        String test="";
-//        if(true)
-//        {
-//            tts.speak(test1, android.speech.tts.TextToSpeech.QUEUE_ADD, null, test1);
-//
-//
-//            if(tts.isSpeaking()) {
-//                long lastSpokeTime=System.currentTimeMillis();
-//                long IterateTime=2000;
-//                while(System.currentTimeMillis()-lastSpokeTime<IterateTime){}
-//                tts.stop();
-//
-//                makeBeep();
-//            }
-//            tts.speak(test3, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, test3);
-//        }
-//        else {
-//            String test2 = ".";
-//            test=test1+test2+test3;
-//        }
-//
-//
-//        tts.speak(test, android.speech.tts.TextToSpeech.QUEUE_ADD, null, test);
-
-        //tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
-
+        tts.stop();
+        tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
     }
 
     // Speak label and location
@@ -190,6 +165,12 @@ public class TextToSpeech extends AppCompatActivity {
         readText("주의하세요");
         while(System.currentTimeMillis()-lastSpokeTime<IterateTime2) {
 
+    public void alertLeftSide() {
+        readTextWithInterference("왼쪽으로 기울어짐");
+    }
+    public void alertRightSide() {
+        readTextWithInterference("오른쪽으로 기울어짐");
+    }
         }
 
         //tts.readText("장애물과 너무 가깝습니다.");
@@ -277,4 +258,6 @@ public class TextToSpeech extends AppCompatActivity {
     public void setLastSpokeTime(long lastSpokeTime) {
         this.lastSpokeTime = lastSpokeTime;
     }
+    public void setIsRunning(boolean isRunning) {this.isRunning = isRunning;}
+    public boolean getIsRunning() {return isRunning;}
 }
