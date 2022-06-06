@@ -99,6 +99,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private Matrix frameToCropTransform;
     private Matrix cropToFrameTransform;
 
+
     private MultiBoxTracker tracker;
 
     private BorderedText borderedText;
@@ -363,9 +364,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     );
 
                     /** Custom **/
-                    if (tts != null && !tts.IsSpeaking()) {
+                    //tts stop() 로직 구현
+                    //tts.stop();
+
+                    if ((tts != null && !tts.IsSpeaking()) || readDetectedDepth(mappedRecognitions)){
                         if (MotionDetector.isDetectMode() && !motionDetector.isMoving() && (tts.getLastSpokeTimePassed() > MotionDetector.getFrequency())) {
-                            // 정지 모드 안내 실행
+                            // *--정지 모드 안내 실행
                             readDetectedData(mappedRecognitions);
 
 
@@ -516,22 +520,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 String koreanLabel = koreanLabelTable.get(englishLabel);
 
                 ArrayList<Double> detectedLocation = detectedLocations.get(i);
-                Log.d("detectedLocation", detectedLocation.get(i) + " file not found.");
-
-                double y = detectedLocation.get(0);
-                double x = detectedLocation.get(1);
-                int depth = getDetectedDepth((int) x, (int) y);
+                //Log.d("detectedLocation", detectedLocation.get(i) + " file not found.");
 
                 String location = tts.inputLocation(detectedLocation);
 
-                if (depth < 10) {
-                    tts.stop();
-                    tts.makeBeep();
-                }
-                tts = TextToSpeech.getInstance(this);
                 map.get(location).add(koreanLabel); //해당 위치의 hashmap 장소 추가
-
-                    //Log.d("depthFile", depth + " file not found.");
 
                 }
             }
@@ -539,6 +532,39 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         tts.readLocations(map);
     }
+
+    private boolean readDetectedDepth(List<Classifier.Recognition> recognitions){
+
+        boolean state=true;
+
+        List<Classifier.Recognition> sortedRecognition  =
+                getSortedDetectedDataList(getFilteredDetectedDataBySize(recognitions));
+        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(sortedRecognition);
+
+        for (int i = 0; i < sortedRecognition.size(); i++) {
+
+                ArrayList<Double> detectedLocation = detectedLocations.get(i);
+
+                double y = detectedLocation.get(0);
+                double x = detectedLocation.get(1);
+                int depth = getDetectedDepth((int) x, (int) y);
+
+
+
+                if (depth <10) { //인식되는 물체가 일정이상 가까워지면 tts를 종료하고 비프음을 울림
+                    tts.stop();
+                    tts.makeBeep();
+
+
+                    state=false;
+                }
+                else
+                    state=true;
+        }
+
+        return state;
+    }
+
 
     //private void
     private int getDetectedDepth(int x, int y) {

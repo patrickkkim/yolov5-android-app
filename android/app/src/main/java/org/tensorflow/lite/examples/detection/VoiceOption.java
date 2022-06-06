@@ -118,6 +118,7 @@ public class VoiceOption extends AppCompatActivity {
 
 
                 tts.reset();
+                TestText("설정이 초기화 되었습니다.");
                 //tts.readTextWithInterference("d");
 
             }
@@ -128,9 +129,7 @@ public class VoiceOption extends AppCompatActivity {
         tts.readText(text);
     }
 
-    public void beef(){
 
-    }
 
     @Override
     protected void onDestroy(){

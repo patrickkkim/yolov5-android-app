@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Handler;
 
 public class TextToSpeech extends AppCompatActivity {
     private android.speech.tts.TextToSpeech tts;
@@ -180,11 +181,17 @@ public class TextToSpeech extends AppCompatActivity {
         }
         player.setLooping(true);
         long lastSpokeTime=System.currentTimeMillis();
-        long IterateTime=1000;
+        long IterateTime=800;
+        long IterateTime2=3000;
         while(System.currentTimeMillis()-lastSpokeTime<IterateTime) {
             player.start();
         }
         player.stop();
+        readText("주의하세요");
+        while(System.currentTimeMillis()-lastSpokeTime<IterateTime2) {
+
+        }
+
         //tts.readText("장애물과 너무 가깝습니다.");
 
     }

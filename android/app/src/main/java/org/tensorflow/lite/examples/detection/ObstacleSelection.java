@@ -42,6 +42,8 @@ public class ObstacleSelection extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_obstacle_selection);
+
+        tts = TextToSpeech.getInstance(this);
         
         String checked = null;
         boolean obsChecked[]= new boolean[21];
@@ -115,13 +117,18 @@ public class ObstacleSelection extends AppCompatActivity {
                 //intent.putExtra(obstacles.get(i), obstacles.get(i));
 
 
+
                 if(obsChecked[i]==false)
                 {
                     checkedObs.add(obstacles.get(i));
+                    Toast.makeText(getApplicationContext(),obstacles.get(i) , Toast.LENGTH_SHORT).show();
+                    tts.readText(obstacles.get(i));
                     obsChecked[i]=true;
                 }
                 else {
                     checkedObs.remove(obstacles.get(i));
+
+                    tts.readText(obstacles.get(i)+"취소");
                     obsChecked[i] = false;
                 }
 
@@ -133,8 +140,9 @@ public class ObstacleSelection extends AppCompatActivity {
             @Override
             public void onClick(View view){
 
-
-                Toast.makeText(getApplicationContext(), "초기화 되었습니다.", Toast.LENGTH_SHORT).show();
+                String text="초기화 되었습니다.";
+                Toast.makeText(getApplicationContext(),text , Toast.LENGTH_SHORT).show();
+                tts.readText(text);
                 editor.clear();
                 editor.commit();
                 finish();
@@ -153,8 +161,11 @@ public class ObstacleSelection extends AppCompatActivity {
                 }
 
                 //Toast.makeText(getApplicationContext(), Integer.toString(checkedObs.size()), Toast.LENGTH_SHORT).show();
-                if(checkedResult=="")
-                    Toast.makeText(getApplicationContext(), "체크가 되지 않았습니다.", Toast.LENGTH_SHORT).show();
+                if(checkedResult=="") {
+                    String text = "체크가 되지 않았습니다.";
+                    Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
+                    tts.readText(text);
+                }
                 else
                 {
 
@@ -163,6 +174,8 @@ public class ObstacleSelection extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), checkedResult, Toast.LENGTH_SHORT).show();
                     //intent.putExtra("obstacle",checkedResult);
                     //startActivity(intent);
+                    String text=checkedResult+"가 저장되었습니다.";
+                    tts.readText(text);
 
 
                     editor.putString("obstacle",checkedResult);// key, value를 이용하여 저장하는 형태
