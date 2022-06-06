@@ -30,6 +30,7 @@ android {
     lint {
         abortOnError false
     }
+    namespace 'org.tensorflow.lite.examples.detection'
 }
 
 // import DownloadModels task
@@ -62,6 +63,8 @@ dependencies {
 //    implementation 'org.tensorflow:tensorflow-lite:0.0.0-gpu-experimental'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'com.google.code.gson:gson:2.8.6'
+    implementation files('D:\\내 PC\\문서\\ROS\\Plain-ROS-Java-System-Example\\gradle\\wrapper\\gradle-wrapper.jar')
+    implementation files('D:\\내 PC\\문서\\ROS\\jsch-0.1.54.jar')
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'com.android.support.test:rules:1.0.2'
     androidTestImplementation 'com.google.truth:truth:1.0.1'
