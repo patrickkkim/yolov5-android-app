@@ -5,6 +5,7 @@ import static android.util.Log.ERROR;
 import android.content.Context;
 import android.content.Intent;
 import android.speech.tts.UtteranceProgressListener;
+import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -20,10 +21,14 @@ import java.util.Map;
 
 public class TextToSpeech extends AppCompatActivity {
     private final android.speech.tts.TextToSpeech tts;
+
     private final double border_Left = 212;
     private final double border_Lower = 212;
     private final double border_Right = 426;
     private final double border_Top = 426;
+
+    private static UtteranceProgressListener progressListener;
+    private static boolean isRunning = false;
 
     private static TextToSpeech instance;
 
@@ -45,7 +50,7 @@ public class TextToSpeech extends AppCompatActivity {
         });
 
         // tts에 리스너 추가
-        UtteranceProgressListener progressListener = new UtteranceProgressListener() {
+        progressListener = new UtteranceProgressListener() {
             @Override
             public void onStart(String s) { }
             @Override
@@ -86,7 +91,8 @@ public class TextToSpeech extends AppCompatActivity {
 
     // 문장 읽기 메소드(말 끊기 가능)
     public void readTextWithInterference(String text) {
-        // 구현
+        tts.stop();
+        tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
     }
 
     // Speak label and location
@@ -112,8 +118,12 @@ public class TextToSpeech extends AppCompatActivity {
         readText(speechText);
     }
 
-    public void readBreakAway() {
-        readText("직진하세요");
+
+    public void alertLeftSide() {
+        readTextWithInterference("왼쪽으로 기울어짐");
+    }
+    public void alertRightSide() {
+        readTextWithInterference("오른쪽으로 기울어짐");
     }
 
     public boolean IsSpeaking(){
@@ -196,4 +206,6 @@ public class TextToSpeech extends AppCompatActivity {
     public void setLastSpokeTime(long lastSpokeTime) {
         this.lastSpokeTime = lastSpokeTime;
     }
+    public void setIsRunning(boolean isRunning) {this.isRunning = isRunning;}
+    public boolean getIsRunning() {return isRunning;}
 }

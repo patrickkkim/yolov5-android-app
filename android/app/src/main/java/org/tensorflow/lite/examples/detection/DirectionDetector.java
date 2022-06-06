@@ -16,13 +16,10 @@ public class DirectionDetector extends Application{
 
     private static boolean detectMode;
 
-
-
     private static SensorManager directionDetectSensorManager;
     private static SensorEventListener directionDetectListener;
 
     private static int orientation;
-
 
     private static float[] rotation = new float[9];
     private static float[] result_data = new float[3];
@@ -38,6 +35,7 @@ public class DirectionDetector extends Application{
     private static int prevOri = 0;
     private static int currentOri = 0;
     private static boolean isLoading = false;
+    private static int stepCounter = 0;
 
     private DirectionDetector(Context context) {
         directionDetectSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
@@ -70,12 +68,25 @@ public class DirectionDetector extends Application{
                         currentOri = orientation;
                         isLoading = true;
                     }
-                    else{
+                    if(stepCounter == 0){
                         prevOri = currentOri;
                         currentOri = orientation;
+                        stepCounter++;
                     }
-                    if(Math.abs(currentOri - prevOri) > 10 && Math.abs(currentOri - prevOri) < 50){
-                        tts.readBreakAway();
+                    else if(stepCounter == 2){
+                        prevOri = currentOri;
+                        currentOri = orientation;
+                        if((prevOri - currentOri) > 10 && (prevOri - currentOri) < 50){
+                            //왼쪽으로 틀어짐
+                            tts.alertLeftSide();
+                        }
+                        else if((currentOri - prevOri) > 10 && (currentOri - prevOri) < 50){
+                            // 오른쪽으로 틀어짐
+                            tts.alertRightSide();
+                        }
+                        stepCounter = 0;
+                    }else{
+                        stepCounter++;
                     }
                 }
             }
