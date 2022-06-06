@@ -115,11 +115,12 @@ public class BluetoothExampleActivity extends AppCompatActivity {
             public void handleMessage(Message msg) {
                 if(msg.what == ConnectedThread.RESPONSE_MESSAGE){
                     String txt = (String) msg.obj;
+                  
                     processScanData(txt);
                     if(response.getText().toString().length() >= 100){
                         response.setText("");
                         response.append(txt);
-                    }else{
+                    } else {
                         response.append("\n" + txt);
                     }
                 }

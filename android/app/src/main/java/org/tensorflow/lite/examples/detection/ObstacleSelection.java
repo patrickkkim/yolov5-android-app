@@ -34,7 +34,7 @@ import java.util.Map;
 public class ObstacleSelection extends AppCompatActivity {
     private Map<Integer, String> labelTable = new HashMap<>();
     private TextView textView;
-    private Button AllChoiceButton, SaveButton;
+    private Button Reset, SaveButton;
     private String checkedResult="";
     private TextToSpeech tts;
 
@@ -42,40 +42,45 @@ public class ObstacleSelection extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_obstacle_selection);
+
+        tts = TextToSpeech.getInstance(this);
         
         String checked = null;
-        boolean obsChecked[]= new boolean[20];
+        boolean obsChecked[]= new boolean[21];
         Arrays.fill(obsChecked,false);
 
         textView=(TextView)findViewById(R.id.textView);
-        AllChoiceButton=(Button)findViewById(R.id.allchoicebutton);
+        Reset=(Button)findViewById(R.id.allchoicebutton);
         SaveButton=(Button)findViewById(R.id.savebutton);
+
+        SharedPreferences sharedPreferences = getSharedPreferences("obstacle_list",MODE_PRIVATE); //저장을 하기위해 editor를 이용하여 값을 저장시켜준다.
+        SharedPreferences.Editor editor = sharedPreferences.edit();
 
 
         ArrayList<String> obstacles = new ArrayList<String>();
         ArrayList<String> checkedObs = new ArrayList<String>();
         // ArrayAdapter 생성. 아이템 View를 선택(multiple choice)가능하도록 만듦.
-        obstacles.add("truck");
-        obstacles.add("tree_trunk");
-        obstacles.add("traffic_light");
-        obstacles.add("scooter");
-        obstacles.add("potted_plant");
-        obstacles.add("pole");
-        obstacles.add("person");
-        obstacles.add("movable_signage");
-        obstacles.add("motorcycle");
-        obstacles.add("kiosk");
-        obstacles.add("fire_hydrant");
-        obstacles.add("chair");
-        obstacles.add("carrier");
-        obstacles.add("car");
-        obstacles.add("bus");
-        obstacles.add("caution_zone");
-        obstacles.add("bike_lane");
-        obstacles.add("alley");
-        obstacles.add("roadway");
-        obstacles.add("braille_guide_blocks");
-        obstacles.add("sidewalk");
+        obstacles.add("트럭");
+        obstacles.add("가로수");
+        obstacles.add("신호등");
+        obstacles.add("스쿠터");
+        obstacles.add("화분");
+        obstacles.add("기둥");
+        obstacles.add("사람");
+        obstacles.add("안내판");
+        obstacles.add("오토바이");
+        obstacles.add("점포");
+        obstacles.add("소화전");
+        obstacles.add("의자");
+        obstacles.add("리어카");
+        obstacles.add("차");
+        obstacles.add("버스");
+        obstacles.add("주의구역");
+        obstacles.add("자전거도로");
+        obstacles.add("횡단보도");
+        obstacles.add("찻길");
+        obstacles.add("점자블록");
+        obstacles.add("인도");
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_multiple_choice, obstacles)
         {
@@ -112,13 +117,18 @@ public class ObstacleSelection extends AppCompatActivity {
                 //intent.putExtra(obstacles.get(i), obstacles.get(i));
 
 
+
                 if(obsChecked[i]==false)
                 {
                     checkedObs.add(obstacles.get(i));
+                    Toast.makeText(getApplicationContext(),obstacles.get(i) , Toast.LENGTH_SHORT).show();
+                    tts.readText(obstacles.get(i));
                     obsChecked[i]=true;
                 }
                 else {
                     checkedObs.remove(obstacles.get(i));
+
+                    tts.readText(obstacles.get(i)+"취소");
                     obsChecked[i] = false;
                 }
 
@@ -126,15 +136,16 @@ public class ObstacleSelection extends AppCompatActivity {
             }
         });
 
-        AllChoiceButton.setOnClickListener(new View.OnClickListener() {
+        Reset.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view){
 
-                for(int i=0; i<obsChecked.length; i++)
-                {
-                    obsChecked[i]=true;
-                }
-                Toast.makeText(getApplicationContext(), "전체 선택", Toast.LENGTH_SHORT).show();
+                String text="초기화 되었습니다.";
+                Toast.makeText(getApplicationContext(),text , Toast.LENGTH_SHORT).show();
+                tts.readText(text);
+                editor.clear();
+                editor.commit();
+                finish();
 
             }
         });
@@ -143,22 +154,35 @@ public class ObstacleSelection extends AppCompatActivity {
             @Override
             public void onClick(View view){
 
-                //Toast.makeText(getApplicationContext(), Integer.toString(checkedObs.size()), Toast.LENGTH_SHORT).show();
+                checkedResult="";   //저장이 되기 전 초기화
 
-
-                for (String item : checkedObs) {
+                for (String item : checkedObs) {    //체크된 obstacle 수만큼 추가
                     checkedResult += item + ",";
                 }
-                checkedResult = checkedResult.substring(0, checkedResult.length()-1);
 
-                Toast.makeText(getApplicationContext(), checkedResult, Toast.LENGTH_SHORT).show();
-                //intent.putExtra("obstacle",checkedResult);
-                //startActivity(intent);
-                SharedPreferences sharedPreferences = getSharedPreferences("obstacle_list",MODE_PRIVATE); //저장을 하기위해 editor를 이용하여 값을 저장시켜준다.
-                SharedPreferences.Editor editor = sharedPreferences.edit();
+                //Toast.makeText(getApplicationContext(), Integer.toString(checkedObs.size()), Toast.LENGTH_SHORT).show();
+                if(checkedResult=="") {
+                    String text = "체크가 되지 않았습니다.";
+                    Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
+                    tts.readText(text);
+                }
+                else
+                {
 
-                editor.putString("obstacle",checkedResult);// key, value를 이용하여 저장하는 형태
-                editor.commit();
+                    checkedResult = checkedResult.substring(0, checkedResult.length()-1);
+
+                    Toast.makeText(getApplicationContext(), checkedResult, Toast.LENGTH_SHORT).show();
+                    //intent.putExtra("obstacle",checkedResult);
+                    //startActivity(intent);
+                    String text=checkedResult+"가 저장되었습니다.";
+                    tts.readText(text);
+
+
+                    editor.putString("obstacle",checkedResult);// key, value를 이용하여 저장하는 형태
+                    editor.commit();
+                }
+
+
 
             }
         });
