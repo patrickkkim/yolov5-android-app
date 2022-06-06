@@ -138,34 +138,23 @@ public class BluetoothExampleActivity extends AppCompatActivity {
             dataStr = dataStr.substring(1, dataStr.length() - 1);
             dataList = Arrays.asList(dataStr.split(", "));
 
-            float minDistance = 99f;
-            int minIndex = 0;
-            int i = 0;
+            float minDistance = 99.9f;
             for (String data : dataList) {
                 if (data.equals("inf")) { continue; }
                 float distance = Float.parseFloat(data);
+                if (distance < 0.6) {
+                    continue;
+                }
                 if (distance < minDistance) {
                     minDistance = distance;
-                    minIndex = i;
                 }
-                i++;
             }
 
-            int left, mid, length;
-            length = dataList.size();
-            left = length / 3;
-            mid = left * 2;
+            if (minDistance > 0.7 && minDistance < 1.0) {
+                tts.makeBeep();
 
-            String direction;
-            if (minIndex <= left) {
-                direction = "왼쪽";
-            } else if (minIndex > left && minIndex <= mid) {
-                direction = "중앙";
-            } else {
-                direction = "오른쪽";
             }
-
-            tts.readText(direction + " " + String.format("%.2f", minDistance));
+//            tts.readText(direction + " " + String.format("%.2f", minDistance));
         }
 
         // 223.39 pixels width

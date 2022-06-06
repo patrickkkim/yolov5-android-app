@@ -349,6 +349,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                             int y = (int) location.centerY();
                             int x = (int) location.centerX();
                             int depth = getDetectedDepth(x, y);
+//                            List<Integer> coord = new LinkedList<>();
+//                            coord.add(x);
+//                            coord.add(y);
                             mappedDepth.add(depth);
                         }
                     }
@@ -373,7 +376,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     //tts stop() 로직 구현
                     //tts.stop();
 
-                    if ((tts != null && !tts.IsSpeaking()) || readDetectedDepth(mappedRecognitions)){
+                    if ((tts != null && !tts.IsSpeaking())){
                         if (MotionDetector.isDetectMode() && !motionDetector.isMoving() && (tts.getLastSpokeTimePassed() > MotionDetector.getFrequency())) {
                             // *--정지 모드 안내 실행
                             readDetectedData(mappedRecognitions);
@@ -381,8 +384,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         }
                         else if (tts.getLastSpokeTimePassed() > TextToSpeech.getFrequency()) {
                             // 일반 안내 실행
-                            readDetectedData(mappedRecognitions);
-
+//                            readDetectedData(mappedRecognitions);
+                            alertClosestObj(mappedRecognitions);
                         }
 
                         // 움직임 감지 및 수정(3초 간격으로 감지)
@@ -562,7 +565,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
 
 
-                if (depth <10) { //인식되는 물체가 일정이상 가까워지면 tts를 종료하고 비프음을 울림
+                if (depth < 10) { //인식되는 물체가 일정이상 가까워지면 tts를 종료하고 비프음을 울림
                     tts.stop();
                     tts.makeBeep();
 
@@ -605,16 +608,27 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     // 가장 가까운 사물 검출 후 알림
     private void alertClosestObj(List<Classifier.Recognition> recognitions) {
-        if(recognitions.size() > 0){
-            Classifier.Recognition closestObj = recognitions.get(0);
-            if(recognitions.size() > 1) {
-                for(Classifier.Recognition current : recognitions) {
-                    if(closestObj.getLocation().centerY() - (closestObj.getLocation().height()/2) > current.getLocation().centerY() - (current.getLocation().height()/2)) closestObj = current;
+        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(recognitions);
+        if(recognitions.size() > 1){
+            Float maxY = -1000000f;
+            int minIndex = 0;
+            int i = 0;
+            for (Classifier.Recognition recognition : recognitions) {
+                Float y = recognition.getLocation().centerX();
+                Float height = recognition.getLocation().width();
+                Float bottomY = y + (height / 2);
+                if (bottomY > maxY) {
+                    maxY = bottomY;
+                    minIndex = i;
                 }
+                ++i;
             }
-            String englishLabel = labelTable.get(closestObj.getDetectedClass());
-            String koreanLabel = koreanLabelTable.get(englishLabel);
-            tts.readTextWithInterference("전방에 " + koreanLabel + "있습니다");
+
+            Classifier.Recognition minRecognition = recognitions.get(minIndex);
+            String label = labelTable.get(minRecognition.getDetectedClass());
+            String korLabel = koreanLabelTable.get(label);
+            Float height = minRecognition.getLocation().width();
+            tts.readTextWithInterference(korLabel + "." + String.valueOf(height));
         }
     }
 

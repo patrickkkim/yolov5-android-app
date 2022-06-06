@@ -44,6 +44,9 @@ public class TextToSpeech extends AppCompatActivity {
     private static float speed = 1;
     private static float frequency = 1500;
 
+    private long lastBeepTime;
+    private boolean isBeeping = false;
+
     private Context context;
 
     private TextToSpeech(Context context) {
@@ -63,10 +66,6 @@ public class TextToSpeech extends AppCompatActivity {
         progressListener = new UtteranceProgressListener() {
             @Override
             public void onStart(String s) {
-                if(player.isPlaying())
-                {
-
-                }
             }
             @Override
             public void onError(String s) { }
@@ -149,32 +148,29 @@ public class TextToSpeech extends AppCompatActivity {
         readText(speechText);
     }
 
-    public void makeBeep(){
-        player=MediaPlayer.create(context,R.raw.beep_1);
-        if(player==null){
-            Log.d("@@MediaPlayer", "MediaPlayer is null");
+    public void makeBeep() {
+        if (isBeeping) {
+            if (System.currentTimeMillis() - lastBeepTime > 500) {
+                player.stop();
+                isBeeping = false;
+            }
+            else {
+                return;
+            }
         }
-        player.setLooping(true);
-        long lastSpokeTime=System.currentTimeMillis();
-        long IterateTime=800;
-        long IterateTime2=3000;
-        while(System.currentTimeMillis()-lastSpokeTime<IterateTime) {
-            player.start();
-        }
-        player.stop();
-        readText("주의하세요");
-        while(System.currentTimeMillis()-lastSpokeTime<IterateTime2) {
+        isBeeping = true;
+        player = MediaPlayer.create(context, R.raw.beep_1);
+        player.setLooping(false);
+        lastBeepTime = System.currentTimeMillis();
+        player.start();
+//        readText("주의하세요");
+    }
 
     public void alertLeftSide() {
         readTextWithInterference("왼쪽으로 기울어짐");
     }
     public void alertRightSide() {
         readTextWithInterference("오른쪽으로 기울어짐");
-    }
-        }
-
-        //tts.readText("장애물과 너무 가깝습니다.");
-
     }
   
     public boolean IsSpeaking(){
