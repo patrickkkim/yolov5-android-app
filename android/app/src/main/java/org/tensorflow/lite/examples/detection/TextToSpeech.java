@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Handler;
 
 public class TextToSpeech extends AppCompatActivity {
     private android.speech.tts.TextToSpeech tts;
@@ -32,6 +33,8 @@ public class TextToSpeech extends AppCompatActivity {
 
     private int standbyIndex = 0;
     private int lastPlayIndex = 0;
+    private static UtteranceProgressListener progressListener;
+    private static boolean isRunning = false;
 
     private static TextToSpeech instance;
 
@@ -40,6 +43,9 @@ public class TextToSpeech extends AppCompatActivity {
     private long lastSpokeTime;
     private static float speed = 1;
     private static float frequency = 1500;
+
+    private long lastBeepTime;
+    private boolean isBeeping = false;
 
     private Context context;
 
@@ -57,13 +63,9 @@ public class TextToSpeech extends AppCompatActivity {
         });
 
         // tts에 리스너 추가
-        UtteranceProgressListener progressListener = new UtteranceProgressListener() {
+        progressListener = new UtteranceProgressListener() {
             @Override
             public void onStart(String s) {
-                if(player.isPlaying())
-                {
-
-                }
             }
             @Override
             public void onError(String s) { }
@@ -118,35 +120,8 @@ public class TextToSpeech extends AppCompatActivity {
 
     // 문장 읽기 메소드(말 끊기 가능)
     public void readTextWithInterference(String text) {
-
-//        String test1="안녕";
-//        String test3="하세요";
-//        String test="";
-//        if(true)
-//        {
-//            tts.speak(test1, android.speech.tts.TextToSpeech.QUEUE_ADD, null, test1);
-//
-//
-//            if(tts.isSpeaking()) {
-//                long lastSpokeTime=System.currentTimeMillis();
-//                long IterateTime=2000;
-//                while(System.currentTimeMillis()-lastSpokeTime<IterateTime){}
-//                tts.stop();
-//
-//                makeBeep();
-//            }
-//            tts.speak(test3, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, test3);
-//        }
-//        else {
-//            String test2 = ".";
-//            test=test1+test2+test3;
-//        }
-//
-//
-//        tts.speak(test, android.speech.tts.TextToSpeech.QUEUE_ADD, null, test);
-
-        //tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
-
+        tts.stop();
+        tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, text);
     }
 
     // Speak label and location
@@ -173,20 +148,29 @@ public class TextToSpeech extends AppCompatActivity {
         readText(speechText);
     }
 
-    public void makeBeep(){
-        player=MediaPlayer.create(context,R.raw.beep_1);
-        if(player==null){
-            Log.d("@@MediaPlayer", "MediaPlayer is null");
+    public void makeBeep() {
+        if (isBeeping) {
+            if (System.currentTimeMillis() - lastBeepTime > 500) {
+                player.stop();
+                isBeeping = false;
+            }
+            else {
+                return;
+            }
         }
-        player.setLooping(true);
-        long lastSpokeTime=System.currentTimeMillis();
-        long IterateTime=1000;
-        while(System.currentTimeMillis()-lastSpokeTime<IterateTime) {
-            player.start();
-        }
-        player.stop();
-        //tts.readText("장애물과 너무 가깝습니다.");
+        isBeeping = true;
+        player = MediaPlayer.create(context, R.raw.beep_1);
+        player.setLooping(false);
+        lastBeepTime = System.currentTimeMillis();
+        player.start();
+//        readText("주의하세요");
+    }
 
+    public void alertLeftSide() {
+        readTextWithInterference("왼쪽으로 기울어짐");
+    }
+    public void alertRightSide() {
+        readTextWithInterference("오른쪽으로 기울어짐");
     }
   
     public boolean IsSpeaking(){
@@ -270,4 +254,6 @@ public class TextToSpeech extends AppCompatActivity {
     public void setLastSpokeTime(long lastSpokeTime) {
         this.lastSpokeTime = lastSpokeTime;
     }
+    public void setIsRunning(boolean isRunning) {this.isRunning = isRunning;}
+    public boolean getIsRunning() {return isRunning;}
 }

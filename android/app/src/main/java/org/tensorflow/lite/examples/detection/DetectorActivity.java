@@ -40,6 +40,8 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -99,6 +101,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private Matrix frameToCropTransform;
     private Matrix cropToFrameTransform;
 
+
     private MultiBoxTracker tracker;
 
     private BorderedText borderedText;
@@ -113,6 +116,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private MotionDetector motionDetector;
     private TOFDetector tofDetector;
 
+    // 틀어짐 확인
+    private DirectionDetector directionDetector;
+
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
@@ -120,6 +126,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         tts = TextToSpeech.getInstance(this);
         motionDetector = MotionDetector.getInstance(this);
+        directionDetector = DirectionDetector.getInstance(this);
 
 
 
@@ -342,6 +349,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                             int y = (int) location.centerY();
                             int x = (int) location.centerX();
                             int depth = getDetectedDepth(x, y);
+//                            List<Integer> coord = new LinkedList<>();
+//                            coord.add(x);
+//                            coord.add(y);
                             mappedDepth.add(depth);
                         }
                     }
@@ -363,28 +373,36 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     );
 
                     /** Custom **/
-                    if (tts != null && !tts.IsSpeaking()) {
+                    //tts stop() 로직 구현
+                    //tts.stop();
+
+                    if ((tts != null && !tts.IsSpeaking())){
                         if (MotionDetector.isDetectMode() && !motionDetector.isMoving() && (tts.getLastSpokeTimePassed() > MotionDetector.getFrequency())) {
-                            // 정지 모드 안내 실행
+                            // *--정지 모드 안내 실행
                             readDetectedData(mappedRecognitions);
-
-
 
                         }
                         else if (tts.getLastSpokeTimePassed() > TextToSpeech.getFrequency()) {
                             // 일반 안내 실행
-                            readDetectedData(mappedRecognitions);
-
+//                            readDetectedData(mappedRecognitions);
+                            alertClosestObj(mappedRecognitions);
                         }
 
                         // 움직임 감지 및 수정(3초 간격으로 감지)
                         if (motionDetector.getLastMovedTimePassed() > 3000) {
                             motionDetector.setMovement(false);
                         }
+
                     }
                 }
             }
         );
+    }
+
+    @Override
+    public synchronized void onPause() {
+        super.onPause();
+        directionDetector.stopDirectionDetect();
     }
 
     @Override
@@ -516,22 +534,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 String koreanLabel = koreanLabelTable.get(englishLabel);
 
                 ArrayList<Double> detectedLocation = detectedLocations.get(i);
-                Log.d("detectedLocation", detectedLocation.get(i) + " file not found.");
-
-                double y = detectedLocation.get(0);
-                double x = detectedLocation.get(1);
-                int depth = getDetectedDepth((int) x, (int) y);
+                //Log.d("detectedLocation", detectedLocation.get(i) + " file not found.");
 
                 String location = tts.inputLocation(detectedLocation);
 
-                if (depth < 10) {
-                    tts.stop();
-                    tts.makeBeep();
-                }
-                tts = TextToSpeech.getInstance(this);
                 map.get(location).add(koreanLabel); //해당 위치의 hashmap 장소 추가
-
-                    //Log.d("depthFile", depth + " file not found.");
 
                 }
             }
@@ -539,6 +546,39 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         tts.readLocations(map);
     }
+
+    private boolean readDetectedDepth(List<Classifier.Recognition> recognitions){
+
+        boolean state=true;
+
+        List<Classifier.Recognition> sortedRecognition  =
+                getSortedDetectedDataList(getFilteredDetectedDataBySize(recognitions));
+        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(sortedRecognition);
+
+        for (int i = 0; i < sortedRecognition.size(); i++) {
+
+                ArrayList<Double> detectedLocation = detectedLocations.get(i);
+
+                double y = detectedLocation.get(0);
+                double x = detectedLocation.get(1);
+                int depth = getDetectedDepth((int) x, (int) y);
+
+
+
+                if (depth < 10) { //인식되는 물체가 일정이상 가까워지면 tts를 종료하고 비프음을 울림
+                    tts.stop();
+                    tts.makeBeep();
+
+
+                    state=false;
+                }
+                else
+                    state=true;
+        }
+
+        return state;
+    }
+
 
     //private void
     private int getDetectedDepth(int x, int y) {
@@ -565,6 +605,33 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         }
         return recognitions;
     }
+
+    // 가장 가까운 사물 검출 후 알림
+    private void alertClosestObj(List<Classifier.Recognition> recognitions) {
+        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(recognitions);
+        if(recognitions.size() > 1){
+            Float maxY = -1000000f;
+            int minIndex = 0;
+            int i = 0;
+            for (Classifier.Recognition recognition : recognitions) {
+                Float y = recognition.getLocation().centerX();
+                Float height = recognition.getLocation().width();
+                Float bottomY = y + (height / 2);
+                if (bottomY > maxY) {
+                    maxY = bottomY;
+                    minIndex = i;
+                }
+                ++i;
+            }
+
+            Classifier.Recognition minRecognition = recognitions.get(minIndex);
+            String label = labelTable.get(minRecognition.getDetectedClass());
+            String korLabel = koreanLabelTable.get(label);
+            Float height = minRecognition.getLocation().width();
+            tts.readTextWithInterference(korLabel + "." + String.valueOf(height));
+        }
+    }
+
 
     private int getRandDetectedData(List<Classifier.Recognition> recognitions) {
         if (recognitions.size() == 0) { return -1; }

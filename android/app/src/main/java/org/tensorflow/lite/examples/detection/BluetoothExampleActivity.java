@@ -115,7 +115,7 @@ public class BluetoothExampleActivity extends AppCompatActivity {
             public void handleMessage(Message msg) {
                 if(msg.what == ConnectedThread.RESPONSE_MESSAGE){
                     String txt = (String) msg.obj;
-//                    if (txt.length() > 100) { txt = txt.substring(0, 100); }
+                  
                     processScanData(txt);
                     if(response.getText().toString().length() >= 100){
                         response.setText("");
@@ -138,16 +138,23 @@ public class BluetoothExampleActivity extends AppCompatActivity {
             dataStr = dataStr.substring(1, dataStr.length() - 1);
             dataList = Arrays.asList(dataStr.split(", "));
 
-            float minDistance = 99f;
+            float minDistance = 99.9f;
             for (String data : dataList) {
                 if (data.equals("inf")) { continue; }
                 float distance = Float.parseFloat(data);
+                if (distance < 0.6) {
+                    continue;
+                }
                 if (distance < minDistance) {
                     minDistance = distance;
                 }
             }
-//            Log.d("Bluetooth Scan Data", String.valueOf(dataList.size()));
-            tts.readText(String.format("%.2f", minDistance));
+
+            if (minDistance > 0.7 && minDistance < 1.0) {
+                tts.makeBeep();
+
+            }
+//            tts.readText(direction + " " + String.format("%.2f", minDistance));
         }
 
         // 223.39 pixels width
