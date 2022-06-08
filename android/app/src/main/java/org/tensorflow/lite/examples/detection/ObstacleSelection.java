@@ -122,13 +122,13 @@ public class ObstacleSelection extends AppCompatActivity {
                 {
                     checkedObs.add(obstacles.get(i));
                     Toast.makeText(getApplicationContext(),obstacles.get(i) , Toast.LENGTH_SHORT).show();
-                    tts.readText(obstacles.get(i));
+                    tts.readTextWithInterference(obstacles.get(i));
                     obsChecked[i]=true;
                 }
                 else {
                     checkedObs.remove(obstacles.get(i));
 
-                    tts.readText(obstacles.get(i)+"취소");
+                    tts.readTextWithInterference(obstacles.get(i)+"취소");
                     obsChecked[i] = false;
                 }
 
@@ -142,7 +142,7 @@ public class ObstacleSelection extends AppCompatActivity {
 
                 String text="초기화 되었습니다.";
                 Toast.makeText(getApplicationContext(),text , Toast.LENGTH_SHORT).show();
-                tts.readText(text);
+                tts.readTextWithInterference(text);
                 editor.clear();
                 editor.commit();
                 finish();
@@ -164,7 +164,7 @@ public class ObstacleSelection extends AppCompatActivity {
                 if(checkedResult=="") {
                     String text = "체크가 되지 않았습니다.";
                     Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
-                    tts.readText(text);
+                    tts.readTextWithInterference(text);
                 }
                 else
                 {
@@ -175,7 +175,7 @@ public class ObstacleSelection extends AppCompatActivity {
                     //intent.putExtra("obstacle",checkedResult);
                     //startActivity(intent);
                     String text=checkedResult+"가 저장되었습니다.";
-                    tts.readText(text);
+                    tts.readTextWithInterference(text);
 
 
                     editor.putString("obstacle",checkedResult);// key, value를 이용하여 저장하는 형태
