@@ -384,8 +384,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         }
                         else if (tts.getLastSpokeTimePassed() > TextToSpeech.getFrequency()) {
                             // 일반 안내 실행
-                            readDetectedData(mappedRecognitions);
-//                            alertClosestObj(mappedRecognitions);
+                              readDetectedData(mappedRecognitions);
+                            // alertClosestObj(mappedRecognitions);
                         }
 
                         // 움직임 감지 및 수정(3초 간격으로 감지)
@@ -514,9 +514,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     // Speak label and location
     private void readDetectedData(List<Classifier.Recognition> recognitions) {
-//        List<Classifier.Recognition> sortedRecognition  =
-//                getSortedDetectedDataList(getFilteredDetectedDataBySize(recognitions));
-        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(recognitions);
+        List<Classifier.Recognition> sortedRecognition  = getCloseObj(recognitions);
+        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(sortedRecognition);
 
         LinkedHashMap<String, HashSet<String>> map = new LinkedHashMap<>();
         map.put("왼쪽", new HashSet<>());
@@ -606,7 +605,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     // 가장 가까운 사물 검출 후 알림
     private void alertClosestObj(List<Classifier.Recognition> recognitions) {
-        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(recognitions);
         if(recognitions.size() > 1){
             Float maxY = -1000000f;
             int minIndex = 0;
@@ -628,6 +626,25 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             Float height = minRecognition.getLocation().width();
             tts.readTextWithInterference(korLabel + "." + String.valueOf(height));
         }
+    }
+
+    // Select object with bottomY below previewHeight
+    private List<Classifier.Recognition> getCloseObj (List<Classifier.Recognition> recognitions) {
+        List<Classifier.Recognition> closeObj = new ArrayList<>();
+        if(recognitions.size() < 2) {
+            closeObj = recognitions;
+        }
+        else {
+            for (Classifier.Recognition recognition : recognitions) {
+                Float y = recognition.getLocation().centerX();
+                Float height = recognition.getLocation().width();
+                Float bottomY = y + (height / 2);
+                if(bottomY >= (previewWidth * 0.7) ) {
+                    closeObj.add(recognition);
+                }
+            }
+        }
+        return closeObj;
     }
 
 

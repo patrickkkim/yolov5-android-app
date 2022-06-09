@@ -41,7 +41,7 @@ public class TextToSpeech extends AppCompatActivity {
     MediaPlayer player;
     private boolean isLoading = true;
     private long lastSpokeTime;
-    private static float speed = 1;
+    private static float speed = 1.4f;
     private static float frequency = 1500;
 
     private long lastBeepTime;

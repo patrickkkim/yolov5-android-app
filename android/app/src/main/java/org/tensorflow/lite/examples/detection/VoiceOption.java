@@ -46,7 +46,7 @@ public class VoiceOption extends AppCompatActivity {
         voicefrequency2 = (Button) findViewById(R.id.voicefrequency2);
         voicefast = (Button) findViewById(R.id.voicefast);
         voicelow = (Button) findViewById(R.id.voicelow);
-        stopmode = (Button) findViewById(R.id.stopmode);
+//        stopmode = (Button) findViewById(R.id.stopmode);
         reset=(Button) findViewById(R.id.reset);
 
         tts = TextToSpeech.getInstance(this);
@@ -59,7 +59,7 @@ public class VoiceOption extends AppCompatActivity {
             @Override
             public void onClick(View view){
                 tts.decrementFreq();
-                TestText("목소리 빈도가 늘어납니다.");
+                TestText("안내 빈도가 높아집니다.");
                 Toast.makeText(VoiceOption.this, Float.toString(tts.getFrequency()/1000), Toast.LENGTH_SHORT).show();
             }
         });
@@ -68,7 +68,7 @@ public class VoiceOption extends AppCompatActivity {
             @Override
             public void onClick(View view){
                 tts.incrementFreq();
-                TestText("목소리 빈도가 줄어듭니다.");
+                TestText("안내 빈도가 낮아집니다.");
                 Toast.makeText(VoiceOption.this, Float.toString(tts.getFrequency()/1000), Toast.LENGTH_SHORT).show();
             }
         });
@@ -98,20 +98,20 @@ public class VoiceOption extends AppCompatActivity {
             }
         });
 
-        stopmode.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                MotionDetector.setDetectMode(!MotionDetector.isDetectMode());
-                String output = "";
-                if (MotionDetector.isDetectMode()) {
-                    output = "정지 모드 활성";
-                } else {
-                    output = "정지 모드 비활성";
-                }
-                Toast.makeText(VoiceOption.this, output, Toast.LENGTH_SHORT).show();
-                tts.readText(output);
-            }
-        });
+//        stopmode.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                MotionDetector.setDetectMode(!MotionDetector.isDetectMode());
+//                String output = "";
+//                if (MotionDetector.isDetectMode()) {
+//                    output = "정지 모드 활성";
+//                } else {
+//                    output = "정지 모드 비활성";
+//                }
+//                Toast.makeText(VoiceOption.this, output, Toast.LENGTH_SHORT).show();
+//                tts.readText(output);
+//            }
+//        });
         reset.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view){
@@ -126,7 +126,7 @@ public class VoiceOption extends AppCompatActivity {
     }
     public void TestText(String text)
     {
-        tts.readText(text);
+        tts.readTextWithInterference(text);
     }
 
 

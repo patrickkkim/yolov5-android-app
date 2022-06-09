@@ -45,11 +45,11 @@ public class MainActivity extends AppCompatActivity {
         googlemap_connect=(Button) findViewById(R.id.button2);
         setting_voice=(Button) findViewById(R.id.button3);
         manual_connect=(Button) findViewById(R.id.button4);
-        bluetooth_connect = (Button) findViewById(R.id.buttonBluetooth);
+//        bluetooth_connect = (Button) findViewById(R.id.buttonBluetooth);
 //        tof_connect = (Button) findViewById(R.id.button5);
         obstacle_connect=(Button) findViewById(R.id.button6);
-        rotation_connect=(Button) findViewById(R.id.button7);
-        p2p_connect=(Button) findViewById(R.id.button8);
+//        rotation_connect=(Button) findViewById(R.id.button7);
+//        p2p_connect=(Button) findViewById(R.id.button8);
 
         //TTS 생성
         tts = TextToSpeech.getInstance(this);
@@ -108,14 +108,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        bluetooth_connect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, BluetoothExampleActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-            }
-        });
+//        bluetooth_connect.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(MainActivity.this, BluetoothExampleActivity.class);
+//                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//                startActivity(intent);
+//            }
+//        });
 
         obstacle_connect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -126,23 +126,23 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        rotation_connect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, DirectionActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-            }
-        });
+//        rotation_connect.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(MainActivity.this, DirectionActivity.class);
+//                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//                startActivity(intent);
+//            }
+//        });
 
-        p2p_connect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, P2PActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-            }
-        });
+//        p2p_connect.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(MainActivity.this, P2PActivity.class);
+//                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//                startActivity(intent);
+//            }
+//        });
               
 //        tof_connect.setOnClickListener(new View.OnClickListener() {
 //            @Override
