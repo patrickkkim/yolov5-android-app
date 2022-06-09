@@ -80,6 +80,9 @@
             android:name=".MainActivityOriginal"
             android:exported="false" />
         <activity
+            android:name=".BluetoothConnector"
+            android:exported="false" />
+        <activity
             android:name=".DetectorActivity"
             android:exported="false"
             android:label="@string/tfe_od_app_name"

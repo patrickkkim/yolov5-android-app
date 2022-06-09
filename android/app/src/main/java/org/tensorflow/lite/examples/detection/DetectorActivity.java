@@ -107,6 +107,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     private BorderedText borderedText;
     MediaPlayer player;
 
+    private BluetoothConnector bluetoothConnector;
+
 
     private final Map<Integer, String> labelTable = new HashMap<>();
     private final Map<String, String> koreanLabelTable = new HashMap<>();
@@ -127,9 +129,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         tts = TextToSpeech.getInstance(this);
         motionDetector = MotionDetector.getInstance(this);
         directionDetector = DirectionDetector.getInstance(this);
-
-
-
+//        bluetoothConnector = BluetoothConnector.getInstance(this);
 
         this.initLabelTable();
         this.initAvgSizeTable();
@@ -171,6 +171,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         previewHeight = size.getHeight();
 
         sensorOrientation = rotation - getScreenOrientation();
+        Integer changedOrientation = rotation - 270;
+
         LOGGER.i("Camera orientation relative to screen canvas: %d", sensorOrientation);
 
         LOGGER.i("Initializing at size %dx%d", previewWidth, previewHeight);
@@ -181,7 +183,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 ImageUtils.getTransformationMatrix(
                         previewWidth, previewHeight,
                         cropSize, cropSize,
-                        sensorOrientation, MAINTAIN_ASPECT);
+                        changedOrientation, MAINTAIN_ASPECT);
 
         cropToFrameTransform = new Matrix();
         frameToCropTransform.invert(cropToFrameTransform);
@@ -521,8 +523,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         map.put("왼쪽", new HashSet<>());
         map.put("중앙", new HashSet<>());
         map.put("오른쪽", new HashSet<>());
-        for (int i = 0; i < recognitions.size(); i++) {
-            int labelIndex = recognitions.get(i).getDetectedClass();
+        for (int i = 0; i < sortedRecognition.size(); i++) {
+            int labelIndex = sortedRecognition.get(i).getDetectedClass();
             String englishLabel = labelTable.get(labelIndex);
 
             if(tempTable.containsKey(englishLabel))
