@@ -384,8 +384,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         }
                         else if (tts.getLastSpokeTimePassed() > TextToSpeech.getFrequency()) {
                             // 일반 안내 실행
-//                            readDetectedData(mappedRecognitions);
-                            alertClosestObj(mappedRecognitions);
+                            readDetectedData(mappedRecognitions);
+//                            alertClosestObj(mappedRecognitions);
                         }
 
                         // 움직임 감지 및 수정(3초 간격으로 감지)
@@ -402,7 +402,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     @Override
     public synchronized void onPause() {
         super.onPause();
-        directionDetector.stopDirectionDetect();
+//        directionDetector.stopDirectionDetect();
     }
 
     @Override
@@ -489,8 +489,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 }
             }
         }
-
-
     }
 
     // 파일을 읽고 각 줄을 String 형태로 리스트에 담아서 반환하는 메소드
@@ -516,16 +514,16 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     // Speak label and location
     private void readDetectedData(List<Classifier.Recognition> recognitions) {
-        List<Classifier.Recognition> sortedRecognition  =
-                getSortedDetectedDataList(getFilteredDetectedDataBySize(recognitions));
-        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(sortedRecognition);
+//        List<Classifier.Recognition> sortedRecognition  =
+//                getSortedDetectedDataList(getFilteredDetectedDataBySize(recognitions));
+        ArrayList<ArrayList<Double>> detectedLocations = getDetectedDataLocation(recognitions);
 
         LinkedHashMap<String, HashSet<String>> map = new LinkedHashMap<>();
         map.put("왼쪽", new HashSet<>());
         map.put("중앙", new HashSet<>());
         map.put("오른쪽", new HashSet<>());
-        for (int i = 0; i < sortedRecognition.size(); i++) {
-            int labelIndex = sortedRecognition.get(i).getDetectedClass();
+        for (int i = 0; i < recognitions.size(); i++) {
+            int labelIndex = recognitions.get(i).getDetectedClass();
             String englishLabel = labelTable.get(labelIndex);
 
             if(tempTable.containsKey(englishLabel))

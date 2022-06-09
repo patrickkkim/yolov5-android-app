@@ -139,20 +139,29 @@ public class BluetoothExampleActivity extends AppCompatActivity {
             dataList = Arrays.asList(dataStr.split(", "));
 
             float minDistance = 99.9f;
-            for (String data : dataList) {
-                if (data.equals("inf")) { continue; }
-                float distance = Float.parseFloat(data);
-                if (distance < 0.6) {
-                    continue;
+
+            int windowSize = 3;
+            for (int i = 0; i < dataList.size(); i+=windowSize) {
+                int infCount = 0;
+                for (int j = i; j < i+windowSize && j < dataList.size(); ++j) {
+                    if (dataList.get(j).equals("inf")) {
+                        infCount += 1;
+                    }
                 }
-                if (distance < minDistance) {
-                    minDistance = distance;
+
+                if (infCount < (windowSize / 2)) {
+                    for (int j = i; j < i+windowSize && j < dataList.size(); ++j) {
+                        if (dataList.get(j).equals("inf")) { continue; }
+                        float distance = Float.parseFloat(dataList.get(j));
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                        }
+                    }
                 }
             }
 
-            if (minDistance > 0.7 && minDistance < 1.0) {
+            if (minDistance > 0.1 && minDistance < 0.8) {
                 tts.makeBeep();
-
             }
 //            tts.readText(direction + " " + String.format("%.2f", minDistance));
         }
