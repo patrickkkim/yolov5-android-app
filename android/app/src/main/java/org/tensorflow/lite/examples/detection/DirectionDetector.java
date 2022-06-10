@@ -55,35 +55,53 @@ public class DirectionDetector extends Application{
                 }
                 if(mag_data != null && acc_data != null){
                     SensorManager.getRotationMatrix(rotation, null, acc_data, mag_data);
-                    SensorManager.remapCoordinateSystem(rotation, SensorManager.AXIS_X, SensorManager.AXIS_Z, rotation);
+                    //SensorManager.remapCoordinateSystem(rotation, SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_MINUS_X, rotation);
+                    SensorManager.remapCoordinateSystem(rotation, SensorManager.AXIS_Y, SensorManager.AXIS_X, rotation);
                     SensorManager.getOrientation(rotation, result_data);
                     orientation = (int) Math.toDegrees(result_data[0]);
-                    if(orientation < 0){
+                    if(orientation < 0) {
                         orientation += 360;
                     }
                 }
+//
+//                int smallChange = 10;
+//                int bigChange = 30;
+//                    if (Math.abs(prevOri - orientation) > smallChange) {
+//                        if (Math.abs(prevOri - orientation) < bigChange) {
+//                            if (tts.IsSpeaking()) {
+//                                if (prevOri - orientation > smallChange) {
+//                                    tts.alertLeftSide();
+//                                } else {
+//                                    tts.alertRightSide();
+//                                }
+//                            }
+//                        }
+//                        prevOri = orientation;
+//                    }
+//                    lastMovedTime = System.currentTimeMillis();
+
+
                 if(sensorEvent.sensor.getType() == Sensor.TYPE_STEP_DETECTOR) {
                     if(!isLoading){
                         prevOri = orientation;
-                        currentOri = orientation;
+                        //currentOri = orientation;
                         isLoading = true;
-                    }
-                    if(stepCounter == 0){
-                        prevOri = currentOri;
-                        currentOri = orientation;
                         stepCounter++;
                     }
-                    else if(stepCounter == 2){
-                        prevOri = currentOri;
-                        currentOri = orientation;
-                        if((prevOri - currentOri) > 10 && (prevOri - currentOri) < 50){
+                    if(stepCounter == 0){
+                        prevOri = orientation;
+                        stepCounter++;
+                    }
+                    else if(stepCounter == 1){
+                        if((prevOri - orientation) > 3 && (prevOri - orientation) < 90){
                             //왼쪽으로 틀어짐
                             tts.alertLeftSide();
                         }
-                        else if((currentOri - prevOri) > 10 && (currentOri - prevOri) < 50){
+                        else if((orientation - prevOri) > 3 && (orientation - prevOri) < 90){
                             // 오른쪽으로 틀어짐
                             tts.alertRightSide();
                         }
+                        prevOri = orientation;
                         stepCounter = 0;
                     }else{
                         stepCounter++;
@@ -95,8 +113,8 @@ public class DirectionDetector extends Application{
             public void onAccuracyChanged(Sensor sensor, int i) {
             }
         };
-        directionDetectSensorManager.registerListener(directionDetectListener, magneticSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        directionDetectSensorManager.registerListener(directionDetectListener, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        directionDetectSensorManager.registerListener(directionDetectListener, magneticSensor, SensorManager.SENSOR_DELAY_FASTEST);
+        directionDetectSensorManager.registerListener(directionDetectListener, accelerometerSensor, SensorManager.SENSOR_DELAY_FASTEST);
         directionDetectSensorManager.registerListener(directionDetectListener, stepDetector, SensorManager.SENSOR_DELAY_FASTEST);
     }
 

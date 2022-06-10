@@ -26,7 +26,7 @@ public class MotionDetector {
         sensorEventListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
-                System.out.println("움직임 감지");
+                //System.out.println("움직임 감지");
                 movement = true;
                 lastMovedTime = System.currentTimeMillis();
             }
