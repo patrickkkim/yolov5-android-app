@@ -173,14 +173,14 @@ public class MultiBoxTracker {
       logger.v(
               "Result! Frame: " + result.getLocation() + " mapped to screen:" + detectionScreenRect);
 
-      screenRects.add(new Pair<Float, RectF>(Float.valueOf(depths.get(i)), detectionScreenRect));
+      screenRects.add(new Pair<Float, RectF>(result.getConfidence(), detectionScreenRect));
 
       if (detectionFrameRect.width() < MIN_SIZE || detectionFrameRect.height() < MIN_SIZE) {
         logger.w("Degenerate rectangle! " + detectionFrameRect);
         continue;
       }
 
-      rectsToTrack.add(new Pair<Float, Recognition>(Float.valueOf(depths.get(i)), result));
+      rectsToTrack.add(new Pair<Float, Recognition>(result.getConfidence(), result));
       i++;
     }
 
